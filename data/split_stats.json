@@ -1,0 +1,15 @@
+{
+  "dataset": "CohereLabs/aya_dataset",
+  "language_code": "hin",
+  "seed": 42,
+  "raw_rows": 1153,
+  "dropped_non_hindi_prompt": 115,
+  "dropped_duplicate_pair": 22,
+  "clean_rows": 1016,
+  "unique_prompts": 875,
+  "train_rows": 775,
+  "train_prompts": 675,
+  "val_rows": 61,
+  "val_prompts": 50,
+  "test_prompts": 150
+}

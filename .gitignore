@@ -1,0 +1,24 @@
+# Training runs: keep only run_info.json (adapters and checkpoints are large).
+runs/*/*
+!runs/*/run_info.json
+outputs/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Model weights, wherever they end up
+*.safetensors
+*.bin
+*.pt
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/

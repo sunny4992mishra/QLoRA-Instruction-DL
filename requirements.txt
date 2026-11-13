@@ -1,0 +1,11 @@
+# Needs Python >= 3.11 (Colab and Kaggle both meet this).
+# torch is not pinned: Colab/Kaggle ship a CUDA build. pip only installs one if the
+# existing torch is older than 2.6 (the minimum for transformers 5).
+torch>=2.6
+
+# Pinned to the versions the pipeline was tested with, so all team runs are comparable.
+transformers==5.22.2
+peft==0.21.2
+accelerate==1.15.0
+bitsandbytes==0.50.2
+datasets==5.2.0
