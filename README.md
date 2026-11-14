@@ -109,6 +109,8 @@ Section 5 of the notebook runs steps 2 and 3. The notebook writes answers to `SA
 
 ## Still to do
 
+The work is split across the team in [TASKS.md](TASKS.md), with one GitHub issue per task.
+
 - [ ] LLM-judge script and fixed judge prompt
 - [ ] Human rating sheet (blind, randomised order)
 - [ ] Plotting and results table
