@@ -14,7 +14,10 @@ def load_jsonl(path):
 def compute_dtype():
     if not torch.cuda.is_available():
         return torch.float32
-    return torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16  # T4/P100 -> fp16
+    # Native bf16 only (Ampere+). With emulation allowed, the T4 reports bf16 support and would
+    # train in slow emulated bf16 instead of fp16.
+    native_bf16 = torch.cuda.is_bf16_supported(including_emulation=False)
+    return torch.bfloat16 if native_bf16 else torch.float16  # T4/P100 -> fp16
 
 
 def load_tokenizer(name_or_path):
