@@ -25,6 +25,7 @@ figures/
 notebooks/
   p16_qlora_hindi.ipynb   Colab/Kaggle notebook: baseline, training, generation, grid
 src/
+  analyze.py              results table and plots from runs/ and results/ (no GPU needed)
   prepare_data.py         builds the split from the Aya Dataset (already run)
   prompts.py              chat-template formatting shared by training and generation
   train.py                QLoRA fine-tuning, logs memory/time/loss to run_info.json
@@ -111,6 +112,8 @@ On our training data, the Qwen2.5 tokenizer averages **1.09 characters per token
 5. Evaluate with an LLM judge (1–5 scores for correctness, helpfulness and Hindi fluency) and blind human ratings on a sample.
 6. Plot quality against rank, data size and peak GPU memory.
 
+`python src/analyze.py` (needs only matplotlib) reads `runs/*/run_info.json`, `results/*.jsonl` and `results/judge/*.jsonl`, and writes `results/summary.{csv,md}` and the plots in `figures/`. It works with any subset of runs. Until judge scores exist, the quality plots show validation loss and the share of Devanagari letters in the answers. The judge score format it expects is in the script's docstring.
+
 Section 5 of the notebook runs steps 2 and 3. The notebook writes answers to `SAVE/results/`. Copy those `*.jsonl` files into the repo's `results/` folder and commit them, so everyone evaluates the same outputs. Adapters stay out of git: only `run_info.json` is tracked under `runs/`.
 
 ## Still to do
@@ -119,4 +122,4 @@ The work is split across the team in [TASKS.md](TASKS.md), with one GitHub issue
 
 - [ ] LLM-judge script and fixed judge prompt
 - [ ] Human rating sheet (blind, randomised order)
-- [ ] Plotting and results table
+- [x] Plotting and results table (`src/analyze.py`)
