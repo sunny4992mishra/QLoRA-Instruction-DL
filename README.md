@@ -19,6 +19,9 @@ data/
   splits/val.jsonl         61 rows (50 prompts), used for validation loss
   splits/test.jsonl       150 held-out prompts, never trained on
   split_stats.json        counts from each cleaning step
+  tokenizer_stats.json    characters per token, lengths and truncation per tokenizer
+figures/
+  token_lengths.png       token-length histogram of the training examples
 notebooks/
   p16_qlora_hindi.ipynb   Colab/Kaggle notebook: baseline, training, generation, grid
 src/
@@ -26,6 +29,7 @@ src/
   prompts.py              chat-template formatting shared by training and generation
   train.py                QLoRA fine-tuning, logs memory/time/loss to run_info.json
   generate.py             answers the test prompts, with or without an adapter
+  tokenizer_stats.py      tokenizer analysis (no GPU needed)
   utils.py                model/tokenizer loading, GPU memory stats
 requirements.txt
 ```
@@ -94,7 +98,9 @@ Generation uses greedy decoding (repetition penalty 1.1, up to 512 new tokens), 
 
 ### Tokenizer note
 
-On our training data, the Qwen2.5 tokenizer averages **1.09 characters per token** on Hindi. Sarvam-1, a 2B model trained for Indian languages, averages 3.66. At 1024 tokens with Qwen2.5, 103 of the 775 training rows are truncated and 9 are dropped because the prompt alone is too long. The median example is 363 tokens. This is worth discussing in the report, and Sarvam-1 is a possible second model to compare.
+On our training data, the Qwen2.5 tokenizer averages **1.09 characters per token** on Hindi. Sarvam-1, a 2B model trained for Indian languages, averages 3.67. At 1024 tokens with Qwen2.5, 103 of the 775 training rows are truncated and 9 are dropped because the prompt alone is too long. Together these lose 34% of all response tokens in training, mostly from a few very long rows. The median example is 363 tokens. This is worth discussing in the report, and Sarvam-1 is a possible second model to compare.
+
+`src/tokenizer_stats.py` computes these numbers with the same rules as `train.py`. It needs only the tokenizers, not a GPU or torch. It writes `data/tokenizer_stats.json` and the length histogram `figures/token_lengths.png`.
 
 ## Experiment plan
 
