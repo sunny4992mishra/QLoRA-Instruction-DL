@@ -1,0 +1,10 @@
+run,rank,train_rows,trainable_params,trainable_pct,peak_mem_gb,train_min,final_eval_loss,n_answers,devanagari_pct,median_answer_chars,n_judged,correctness,helpfulness,fluency,judge_mean,correctness_ci,helpfulness_ci,fluency_ci,judge_mean_ci,gpu
+Qwen2.5-1.5B-Instruct_zeroshot,,,,,,,,150,94.8,541.0,,,,,,,,,,
+Qwen2.5-1.5B-Instruct_r4_n775,4,775,4616192,0.2981,5.829,30.3,0.9464396238327026,150,99.6,209.0,,,,,,,,,,Tesla T4
+Qwen2.5-1.5B-Instruct_r8_n775,8,775,9232384,0.5945,5.873,30.4,0.9420283436775208,150,99.2,236.0,,,,,,,,,,Tesla T4
+Qwen2.5-1.5B-Instruct_r16_n100,16,100,18464768,1.182,5.938,4.0,1.04146146774292,150,98.9,239.0,,,,,,,,,,Tesla T4
+Qwen2.5-1.5B-Instruct_r16_n250,16,250,18464768,1.182,5.937,10.7,0.9882395267486572,150,99.4,436.0,,,,,,,,,,Tesla T4
+Qwen2.5-1.5B-Instruct_r16_n500,16,500,18464768,1.182,5.937,20.8,0.9574480056762695,150,98.7,192.5,,,,,,,,,,Tesla T4
+Qwen2.5-1.5B-Instruct_r16_n775,16,775,18464768,1.182,5.936,30.2,0.9370986223220825,150,99.2,197.0,,,,,,,,,,Tesla T4
+Qwen2.5-1.5B-Instruct_r32_n775,32,775,36929536,2.3364,6.131,31.0,0.9321881532669067,150,99.5,205.5,,,,,,,,,,Tesla T4
+Qwen2.5-1.5B-Instruct_r64_n775,64,775,73859072,4.566,6.43,28.8,0.9276958703994751,150,98.1,205.5,,,,,,,,,,Tesla T4
