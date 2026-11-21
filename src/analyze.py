@@ -13,6 +13,9 @@ Judge score format (proposed for #9), one JSON object per line:
     {"id": "aya-hi-test-...", "correctness": 4, "helpfulness": 3, "fluency": 5, ...}
 Scores are integers 1-5, or null if the judge failed on that answer. "hindi_fluency" is
 accepted as a synonym for "fluency". Other fields (judge model, raw judge text) are ignored.
+Judge ids are checked against results/<run>.jsonl: lines with an unknown id are ignored, a
+repeated id keeps its first line, and both are reported as warnings, as are answers with no
+judge line.
 
 The run name joins the three sources: runs/<run>/, results/<run>.jsonl, results/judge/<run>.jsonl.
 The zero-shot run has no run_info.json; it is drawn as a dashed reference line.
@@ -33,6 +36,8 @@ import csv
 import json
 import math
 import re
+import statistics
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -87,13 +92,49 @@ def answer_stats(rows):
     found = [ch for o in outs for ch in LETTER.findall(o)]
     letters = len(found)
     deva = sum(1 for ch in found if DEVANAGARI.match(ch))
-    lengths = sorted(len(o) for o in outs)
+    lengths = [len(o) for o in outs]
     return {
         "n_answers": len(rows),
         "devanagari_pct": round(100 * deva / letters, 1) if letters else None,
-        "median_answer_chars": lengths[len(lengths) // 2] if lengths else None,
+        "median_answer_chars": statistics.median(lengths) if lengths else None,
         "empty_answers": sum(1 for o in outs if not o.strip()),
     }
+
+
+def check_judge_ids(name, rows, answer_ids):
+    """Keep one judge line per answer id and warn about anything that doesn't line up.
+
+    A judge file made from the wrong results file, or one with repeated lines, would otherwise
+    be averaged without any sign of a problem. answer_ids is None when the results file is
+    missing; then only duplicates can be checked.
+    """
+    seen, kept, duplicates, unknown = set(), [], 0, 0
+    for r in rows:
+        rid = r.get("id")
+        if answer_ids is not None and rid not in answer_ids:
+            unknown += 1
+        elif rid in seen:
+            duplicates += 1
+        else:
+            seen.add(rid)
+            kept.append(r)
+    problems = []
+    if unknown:
+        problems.append(f"{unknown} line(s) with an id that is not in results/{name}.jsonl (ignored)")
+    if duplicates:
+        problems.append(f"{duplicates} duplicate id(s) (first line kept)")
+    if answer_ids is None:
+        problems.append(f"no results/{name}.jsonl to check the ids against")
+    elif len(seen) < len(answer_ids):
+        problems.append(f"{len(answer_ids) - len(seen)} answer(s) have no judge line")
+    for msg in problems:
+        print(f"WARNING judge/{name}.jsonl: {msg}", file=sys.stderr)
+    return kept
+
+
+def is_score(v):
+    # bool is a subclass of int in Python, so True would otherwise count as a score of 1.
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and 1 <= v <= 5
 
 
 def judge_stats(rows):
@@ -105,7 +146,7 @@ def judge_stats(rows):
         vals = []
         for c in CRITERIA:
             v = r.get(c)
-            if isinstance(v, (int, float)) and 1 <= v <= 5:
+            if is_score(v):
                 scores[c].append(float(v))
                 vals.append(float(v))
         if len(vals) == len(CRITERIA):
@@ -148,11 +189,14 @@ def collect(runs_dir, results_dir, judge_dir):
             })
         row["rank"], row["train_rows"] = rank, n
         res = results_dir / f"{name}.jsonl"
+        answer_ids = None
         if res.exists():
-            row.update(answer_stats(load_jsonl(res)))
+            answers = load_jsonl(res)
+            answer_ids = {a.get("id") for a in answers}
+            row.update(answer_stats(answers))
         jud = judge_dir / f"{name}.jsonl"
         if jud.exists():
-            row.update(judge_stats(load_jsonl(jud)))
+            row.update(judge_stats(check_judge_ids(name, load_jsonl(jud), answer_ids)))
         table.append(row)
     return table
 
@@ -164,7 +208,7 @@ COLUMNS = [
     ("trainable_params", "Trainable params", "{:,}"), ("trainable_pct", "Trainable %", "{:.3f}"),
     ("peak_mem_gb", "Peak GPU mem (GB)", "{:.2f}"), ("train_min", "Train time (min)", "{:.1f}"),
     ("final_eval_loss", "Val loss", "{:.3f}"), ("n_answers", "Answers", None),
-    ("devanagari_pct", "Devanagari %", "{:.1f}"), ("median_answer_chars", "Median chars", None),
+    ("devanagari_pct", "Devanagari %", "{:.1f}"), ("median_answer_chars", "Median chars", "{:g}"),
     ("n_judged", "Judged", None), ("correctness", "Correctness", "{:.2f}"),
     ("helpfulness", "Helpfulness", "{:.2f}"), ("fluency", "Fluency", "{:.2f}"),
     ("judge_mean", "Judge mean", "{:.2f}"),
@@ -194,7 +238,9 @@ def write_tables(table, results_dir):
         lines.append("| " + " | ".join(fmt(r.get(k), s) for k, _, s in COLUMNS) + " |")
     note = ("\nPeak GPU memory is `torch.cuda.max_memory_allocated` during training (GPU 0). "
             "Judge scores are means over answers on a 1–5 scale; the judge mean averages the "
-            "three criteria per answer. 95% intervals are in summary.csv.\n")
+            "three criteria per answer. 95% intervals are in summary.csv. Median characters is "
+            "the mean of the two middle values when the number of answers is even "
+            "(`statistics.median`).\n")
     (results_dir / "summary.md").write_text("\n".join(lines) + "\n" + note, encoding="utf-8")
 
 
