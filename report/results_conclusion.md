@@ -146,8 +146,11 @@ in Section 2 that a small amount of instruction data mainly teaches the format o
 still loops in 46 answers, though, more than any full-data run.
 
 **Looping falls with rank.** At full data, the number of looping answers goes down as the rank
-goes up: 43, 36, 35, 30 and 15 for r = 4 to 64. The r = 64 model loops in 15 answers, against
-79 zero-shot.
+goes up: 43, 36, 35, 30 and 15 for r = 4 to 64. The order is the same if a loop is defined by a
+6-word phrase (46, 44, 40, 33, 18) or a 5-word phrase (54, 47, 42, 34, 22), and most of the fall
+comes at r = 32 and r = 64. Among answers that also reach the limit, the shorter phrases give a
+count that is about flat from r = 4 to r = 16 (39, 39, 36 with 6 words) and lower only at r = 32
+and r = 64 (30, 17). The r = 64 model loops in 15 answers, against 79 zero-shot.
 
 **N = 250 is an outlier.** Its answers have a median of 417 tokens, 70 run to the limit and 71
 loop. That puts it between N = 100 and zero-shot, although its validation loss lies between
