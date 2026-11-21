@@ -53,8 +53,8 @@ minutes for 100 rows to 30 minutes for 775.
 
 **Everything fits with room to spare.** The largest run peaks at 6.43 GB allocated. The memory
 that PyTorch's allocator reserved varies more between runs, from 7.3 to 9.6 GB, and is still
-well under the T4's 16 GB. Generating the zero-shot answers peaks at 1.98 GB (reported in #18;
-the baseline has no `run_info.json`). GPU memory is therefore not the binding limit for this
+well under the T4's 16 GB. Generating the zero-shot answers peaks at 1.98 GB (measured during
+generation, because the baseline has no `run_info.json`). GPU memory is therefore not the binding limit for this
 model and data on a free GPU.
 
 ### 4.2 Validation loss
