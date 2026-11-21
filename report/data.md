@@ -186,7 +186,7 @@ Two consequences follow for the other sections.
 
 ## References
 
-- Sarvam AI (2024). Sarvam-1: The first Indian language LLM. Blog post, 24 October 2024.
+- Sarvam AI (2024). Sarvam 1: The first Indian language LLM. Blog post, 24 October 2024.
   https://www.sarvam.ai/blogs/sarvam-1. Model: https://huggingface.co/sarvamai/sarvam-1
 - Singh, S., et al. (2024). Aya Dataset: An open-access collection for multilingual instruction
   tuning. In *ACL 2024*. arXiv:2402.06619.
