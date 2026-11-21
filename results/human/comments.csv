@@ -1,0 +1,176 @@
+rater,item,id,system,comment
+Pranjal,2,aya-hi-test-8ddcb8bc34,Qwen2.5-1.5B-Instruct_r16_n775,Fluency N/A: English output
+Pranjal,9,aya-hi-test-22e3d49c04,Qwen2.5-1.5B-Instruct_r16_n775,Fluency N/A: English output
+Sunny,2,aya-hi-test-8ddcb8bc34,Qwen2.5-1.5B-Instruct_r16_n775,Fluency N/A: non-Hindi output is correct
+Sunny,9,aya-hi-test-22e3d49c04,Qwen2.5-1.5B-Instruct_r16_n775,Fluency N/A: non-Hindi output is correct
+Shahid,1,aya-hi-test-4381743ffc,Qwen2.5-1.5B-Instruct_zeroshot,Not a story; repeats one sentence and is cut off.
+Shahid,2,aya-hi-test-8ddcb8bc34,Qwen2.5-1.5B-Instruct_r16_n775,"Exact translation. English output was required, so fluency is judged on the target language."
+Shahid,3,aya-hi-test-bc5c03fcb8,Qwen2.5-1.5B-Instruct_zeroshot,"No real facts about WWI; repeated nonsense, cut off."
+Shahid,4,aya-hi-test-9c2c968d2f,Qwen2.5-1.5B-Instruct_zeroshot,"Picks the third law (correct), then explains all three laws wrongly and repeats."
+Shahid,5,aya-hi-test-9f21661f82,Qwen2.5-1.5B-Instruct_r16_n775,"Invented company, date and purpose."
+Shahid,6,aya-hi-test-c21c1ad403,Qwen2.5-1.5B-Instruct_r16_n100,"Agrees, but gives no reasons; loops."
+Shahid,7,aya-hi-test-7f419cd934,Qwen2.5-1.5B-Instruct_zeroshot,Reasons are unrelated to climate; loops.
+Shahid,8,aya-hi-test-2208927bbf,Qwen2.5-1.5B-Instruct_zeroshot,Wrong name (should be Indira Gandhi); loops.
+Shahid,9,aya-hi-test-22e3d49c04,Qwen2.5-1.5B-Instruct_r16_n775,Correct option.
+Shahid,10,aya-hi-test-31726e8ce4,Qwen2.5-1.5B-Instruct_r16_n775,"No essay content about COVID-19; repetitive, cut off."
+Shahid,11,aya-hi-test-9c2c968d2f,Qwen2.5-1.5B-Instruct_r16_n775,Correct option.
+Shahid,12,aya-hi-test-95fcdbaf6e,Qwen2.5-1.5B-Instruct_r16_n100,Nonsense about a 'drome'; loops.
+Shahid,13,aya-hi-test-032c3df39c,Qwen2.5-1.5B-Instruct_r16_n775,Wrong meaning (should be 'unseen / not read before').
+Shahid,14,aya-hi-test-a6cd4577c5,Qwen2.5-1.5B-Instruct_r16_n100,Wrong winner (Jokha Alharthi).
+Shahid,15,aya-hi-test-99269a5eca,Qwen2.5-1.5B-Instruct_r16_n100,Invented events; loops.
+Shahid,16,aya-hi-test-0892ca8453,Qwen2.5-1.5B-Instruct_r16_n775,Degenerate repetition of 'राज्य के'.
+Shahid,17,aya-hi-test-7619bd7a03,Qwen2.5-1.5B-Instruct_r16_n775,Not a poem; talks about a poem and repeats.
+Shahid,18,aya-hi-test-a6cd4577c5,Qwen2.5-1.5B-Instruct_r16_n775,Invented organisation as winner.
+Shahid,19,aya-hi-test-a6cd4577c5,Qwen2.5-1.5B-Instruct_zeroshot,No answer; loops.
+Shahid,20,aya-hi-test-13dc64a6d8,Qwen2.5-1.5B-Instruct_r16_n100,Correct (4 quadrants).
+Shahid,21,aya-hi-test-8d2a64550b,Qwen2.5-1.5B-Instruct_r16_n100,Wrong (show began in 2018 on Ten).
+Shahid,22,aya-hi-test-95fcdbaf6e,Qwen2.5-1.5B-Instruct_r16_n775,Nonsense; loops.
+Shahid,23,aya-hi-test-7a390c3ed4,Qwen2.5-1.5B-Instruct_zeroshot,Incoherent; loops; Marathi 'आणि' mixed in.
+Shahid,24,aya-hi-test-39a94eb32e,Qwen2.5-1.5B-Instruct_r16_n775,Wrong option (Rafflesia).
+Shahid,25,aya-hi-test-bc5c03fcb8,Qwen2.5-1.5B-Instruct_r16_n100,No relevant facts; loops.
+Shahid,26,aya-hi-test-d38467a697,Qwen2.5-1.5B-Instruct_r16_n775,"Very short, vague story; future self barely present."
+Shahid,27,aya-hi-test-7619bd7a03,Qwen2.5-1.5B-Instruct_r16_n100,Not a poem; loops.
+Shahid,28,aya-hi-test-a0436fd8e8,Qwen2.5-1.5B-Instruct_zeroshot,Wrong reasons (it is never dissolved); loops.
+Shahid,29,aya-hi-test-7a99dfe3aa,Qwen2.5-1.5B-Instruct_r16_n775,Wrong facts; degenerates into 'श्री श्री...'.
+Shahid,30,aya-hi-test-bc5c03fcb8,Qwen2.5-1.5B-Instruct_r16_n775,Invented figures; loops.
+Shahid,31,aya-hi-test-7a99dfe3aa,Qwen2.5-1.5B-Instruct_r16_n100,Wrong; also 'सरकार था' gender error.
+Shahid,32,aya-hi-test-c21c1ad403,Qwen2.5-1.5B-Instruct_zeroshot,"Agrees, but reasons are incoherent; loops."
+Shahid,33,aya-hi-test-c4edec4a08,Qwen2.5-1.5B-Instruct_zeroshot,"English answer, says 'No' (should be Yes), misreads the question."
+Shahid,34,aya-hi-test-7a390c3ed4,Qwen2.5-1.5B-Instruct_r16_n100,Right stance (complementary); reasoning is muddled ('विद्युत').
+Shahid,35,aya-hi-test-ce1660adc1,Qwen2.5-1.5B-Instruct_r16_n100,No real causes given; loops.
+Shahid,36,aya-hi-test-e81cb6f2fa,Qwen2.5-1.5B-Instruct_r16_n100,Not a story; two vague sentences.
+Shahid,37,aya-hi-test-ef8bad9bd2,Qwen2.5-1.5B-Instruct_r16_n775,"Completes the sentence, but the meaning is nonsensical."
+Shahid,38,aya-hi-test-39a94eb32e,Qwen2.5-1.5B-Instruct_zeroshot,Wrong option (cactus) with invented justification.
+Shahid,39,aya-hi-test-22e3d49c04,Qwen2.5-1.5B-Instruct_r16_n100,Wrong (NPTEL); loops.
+Shahid,40,aya-hi-test-ef8bad9bd2,Qwen2.5-1.5B-Instruct_r16_n100,Sensible but minimal completion.
+Shahid,41,aya-hi-test-d38467a697,Qwen2.5-1.5B-Instruct_zeroshot,No coherent story; loops.
+Shahid,42,aya-hi-test-e81cb6f2fa,Qwen2.5-1.5B-Instruct_r16_n775,No story; repeats one sentence.
+Shahid,43,aya-hi-test-8d2a64550b,Qwen2.5-1.5B-Instruct_zeroshot,"Year 2018 matches the first season, but the rest is about architecture degrees and loops."
+Shahid,44,aya-hi-test-c812055d6f,Qwen2.5-1.5B-Instruct_zeroshot,One-sided; repetitive; mixes English 'Smartphones'.
+Shahid,45,aya-hi-test-7f419cd934,Qwen2.5-1.5B-Instruct_r16_n100,No real reasons; loops.
+Shahid,46,aya-hi-test-c4edec4a08,Qwen2.5-1.5B-Instruct_r16_n775,"Wrong: answer is yes, Commander Shepard."
+Shahid,47,aya-hi-test-a0436fd8e8,Qwen2.5-1.5B-Instruct_r16_n100,Wrong reason (it is never dissolved).
+Shahid,48,aya-hi-test-95fcdbaf6e,Qwen2.5-1.5B-Instruct_zeroshot,Invented DRDO expansion and drug facts; loops.
+Shahid,49,aya-hi-test-7619bd7a03,Qwen2.5-1.5B-Instruct_zeroshot,Poem form but not about nature or love; loops.
+Shahid,50,aya-hi-test-c812055d6f,Qwen2.5-1.5B-Instruct_r16_n100,"One-sided, no reasons."
+Shahid,51,aya-hi-test-bc9ad417e1,Qwen2.5-1.5B-Instruct_zeroshot,Misreads the emoji as happy; loops.
+Shahid,52,aya-hi-test-032c3df39c,Qwen2.5-1.5B-Instruct_r16_n100,Wrong meaning.
+Shahid,53,aya-hi-test-2208927bbf,Qwen2.5-1.5B-Instruct_r16_n775,Wrong name; loops.
+Shahid,54,aya-hi-test-39a94eb32e,Qwen2.5-1.5B-Instruct_r16_n100,Wrong option (Rafflesia).
+Shahid,55,aya-hi-test-99269a5eca,Qwen2.5-1.5B-Instruct_r16_n775,Invented events; loops.
+Shahid,56,aya-hi-test-2208927bbf,Qwen2.5-1.5B-Instruct_r16_n100,Wrong name (Indira Gandhi).
+Shahid,57,aya-hi-test-9c2c968d2f,Qwen2.5-1.5B-Instruct_r16_n100,"Says 'fourth law', which is not even an option."
+Shahid,58,aya-hi-test-a0436fd8e8,Qwen2.5-1.5B-Instruct_r16_n775,Wrong reason; repeats one sentence.
+Shahid,59,aya-hi-test-99269a5eca,Qwen2.5-1.5B-Instruct_zeroshot,Incoherent; loops.
+Shahid,60,aya-hi-test-31726e8ce4,Qwen2.5-1.5B-Instruct_r16_n100,Degenerate repetition.
+Shahid,61,aya-hi-test-30971c0304,Qwen2.5-1.5B-Instruct_zeroshot,"Echoes the prompt, then nonsense ('अनौलम्स')."
+Shahid,62,aya-hi-test-8ddcb8bc34,Qwen2.5-1.5B-Instruct_zeroshot,Wrong translation ('Where are you now?'). English output was required.
+Shahid,63,aya-hi-test-8d2a64550b,Qwen2.5-1.5B-Instruct_r16_n775,"Season 2 aired 9 Apr to 2 May 2019, so the date is plausible, but no network or general answer."
+Shahid,64,aya-hi-test-9f21661f82,Qwen2.5-1.5B-Instruct_zeroshot,Nonsense list; loops.
+Shahid,65,aya-hi-test-c21c1ad403,Qwen2.5-1.5B-Instruct_r16_n775,"No stance, no reasons; loops."
+Shahid,66,aya-hi-test-30971c0304,Qwen2.5-1.5B-Instruct_r16_n100,Only copies the prompt; no story.
+Shahid,67,aya-hi-test-0892ca8453,Qwen2.5-1.5B-Instruct_r16_n100,Wrong facts; loops.
+Shahid,68,aya-hi-test-22e3d49c04,Qwen2.5-1.5B-Instruct_zeroshot,Invents a 'Swarnjayanti' centre and lists all options without choosing NPTEL.
+Shahid,69,aya-hi-test-8ddcb8bc34,Qwen2.5-1.5B-Instruct_r16_n100,Wrong translation ('Where are you now?'). English output was required.
+Shahid,70,aya-hi-test-7a99dfe3aa,Qwen2.5-1.5B-Instruct_zeroshot,Invented person; loops.
+Shahid,71,aya-hi-test-13dc64a6d8,Qwen2.5-1.5B-Instruct_r16_n775,Correct option.
+Shahid,72,aya-hi-test-7f419cd934,Qwen2.5-1.5B-Instruct_r16_n775,Confuses monsoon with climate change; loops.
+Shahid,73,aya-hi-test-30971c0304,Qwen2.5-1.5B-Instruct_r16_n775,"Echoes the prompt, then loops."
+Shahid,74,aya-hi-test-4381743ffc,Qwen2.5-1.5B-Instruct_r16_n775,"Very short, vague story; grammar errors."
+Shahid,75,aya-hi-test-032c3df39c,Qwen2.5-1.5B-Instruct_zeroshot,Wrong meaning.
+Shahid,76,aya-hi-test-31726e8ce4,Qwen2.5-1.5B-Instruct_zeroshot,Wrong (calls it a haemorrhagic fever); loops.
+Shahid,77,aya-hi-test-9f21661f82,Qwen2.5-1.5B-Instruct_r16_n100,No real reasons; loops.
+Shahid,78,aya-hi-test-c812055d6f,Qwen2.5-1.5B-Instruct_r16_n775,One-sided; minor grammar errors.
+Shahid,79,aya-hi-test-c4edec4a08,Qwen2.5-1.5B-Instruct_r16_n100,English nonsense; wrong answer.
+Shahid,80,aya-hi-test-e81cb6f2fa,Qwen2.5-1.5B-Instruct_zeroshot,Refuses incoherently; stray Chinese character.
+Shahid,81,aya-hi-test-d38467a697,Qwen2.5-1.5B-Instruct_r16_n100,Repeats one sentence; no story.
+Shahid,82,aya-hi-test-bc9ad417e1,Qwen2.5-1.5B-Instruct_r16_n100,Misidentifies the emoji as 😊.
+Shahid,83,aya-hi-test-13dc64a6d8,Qwen2.5-1.5B-Instruct_zeroshot,"Correct answer (4) first, then wrong explanation and loops."
+Shahid,84,aya-hi-test-ce1660adc1,Qwen2.5-1.5B-Instruct_zeroshot,Nonsense causes; loops.
+Shahid,85,aya-hi-test-ef8bad9bd2,Qwen2.5-1.5B-Instruct_zeroshot,Only repeats the fragment; no completion.
+Shahid,86,aya-hi-test-4381743ffc,Qwen2.5-1.5B-Instruct_r16_n100,Story attempt degenerates into repetition.
+Shahid,87,aya-hi-test-ce1660adc1,Qwen2.5-1.5B-Instruct_r16_n775,Nonsense causes; loops.
+Shahid,88,aya-hi-test-bc9ad417e1,Qwen2.5-1.5B-Instruct_r16_n775,Treats the emoji as happy (it is expressionless/annoyed).
+Shahid,89,aya-hi-test-0892ca8453,Qwen2.5-1.5B-Instruct_zeroshot,Invented institutions; loops.
+Shahid,90,aya-hi-test-7a390c3ed4,Qwen2.5-1.5B-Instruct_r16_n775,Right stance (complementary); circular reasoning.
+Ompal,1,aya-hi-test-4381743ffc,Qwen2.5-1.5B-Instruct_zeroshot,loops: repeats the same sentence; story is not developed.
+Ompal,3,aya-hi-test-bc5c03fcb8,Qwen2.5-1.5B-Instruct_zeroshot,off-topic: does not explain four relevant historical facts.
+Ompal,4,aya-hi-test-9c2c968d2f,Qwen2.5-1.5B-Instruct_zeroshot,wrong fact: explanation of the first and second laws is incorrect.
+Ompal,5,aya-hi-test-9f21661f82,Qwen2.5-1.5B-Instruct_r16_n775,wrong fact: invented app origin and purpose.
+Ompal,6,aya-hi-test-c21c1ad403,Qwen2.5-1.5B-Instruct_r16_n100,loops: repeated vague sentences; no supporting reasons.
+Ompal,7,aya-hi-test-7f419cd934,Qwen2.5-1.5B-Instruct_zeroshot,off-topic: listed reasons are nonsensical.
+Ompal,8,aya-hi-test-2208927bbf,Qwen2.5-1.5B-Instruct_zeroshot,wrong fact: India's first woman PM was Indira Gandhi.
+Ompal,10,aya-hi-test-31726e8ce4,Qwen2.5-1.5B-Instruct_r16_n775,off-topic: does not explain COVID-19 meaningfully.
+Ompal,12,aya-hi-test-95fcdbaf6e,Qwen2.5-1.5B-Instruct_r16_n100,off-topic: does not explain the drug or approval.
+Ompal,13,aya-hi-test-032c3df39c,Qwen2.5-1.5B-Instruct_r16_n775,wrong fact: अपठित means 'बिना पढ़ा हुआ'.
+Ompal,14,aya-hi-test-a6cd4577c5,Qwen2.5-1.5B-Instruct_r16_n100,wrong fact: winner is not identified correctly.
+Ompal,15,aya-hi-test-99269a5eca,Qwen2.5-1.5B-Instruct_r16_n100,wrong fact: invented political-career details.
+Ompal,16,aya-hi-test-0892ca8453,Qwen2.5-1.5B-Instruct_r16_n775,loops: repeated phrase; no useful essay content.
+Ompal,17,aya-hi-test-7619bd7a03,Qwen2.5-1.5B-Instruct_r16_n775,off-topic: does not provide the requested romantic poem.
+Ompal,18,aya-hi-test-a6cd4577c5,Qwen2.5-1.5B-Instruct_r16_n775,wrong fact: invented award winner.
+Ompal,19,aya-hi-test-a6cd4577c5,Qwen2.5-1.5B-Instruct_zeroshot,off-topic: does not answer who won the award.
+Ompal,21,aya-hi-test-8d2a64550b,Qwen2.5-1.5B-Instruct_r16_n100,wrong fact: 1960 is unrelated to the show's broadcast.
+Ompal,22,aya-hi-test-95fcdbaf6e,Qwen2.5-1.5B-Instruct_r16_n775,loops: repeated vague sentences; no relevant details.
+Ompal,23,aya-hi-test-7a390c3ed4,Qwen2.5-1.5B-Instruct_zeroshot,wrong fact: contradicts the reference's complementary view without support.
+Ompal,24,aya-hi-test-39a94eb32e,Qwen2.5-1.5B-Instruct_r16_n775,wrong fact: correct option is रेफ्लीसिया.
+Ompal,25,aya-hi-test-bc5c03fcb8,Qwen2.5-1.5B-Instruct_r16_n100,off-topic: does not give four relevant facts.
+Ompal,26,aya-hi-test-d38467a697,Qwen2.5-1.5B-Instruct_r16_n775,off-topic: story is incoherent and does not establish a future meeting.
+Ompal,27,aya-hi-test-7619bd7a03,Qwen2.5-1.5B-Instruct_r16_n100,off-topic: not a coherent romantic poem; repeated unrelated phrases.
+Ompal,28,aya-hi-test-a0436fd8e8,Qwen2.5-1.5B-Instruct_zeroshot,wrong fact: permanent because it is never dissolved; one-third retire every two years.
+Ompal,29,aya-hi-test-7a99dfe3aa,Qwen2.5-1.5B-Instruct_r16_n775,wrong fact: gives an invented organization and date.
+Ompal,30,aya-hi-test-bc5c03fcb8,Qwen2.5-1.5B-Instruct_r16_n775,wrong fact: claims are incoherent and unsupported.
+Ompal,31,aya-hi-test-7a99dfe3aa,Qwen2.5-1.5B-Instruct_r16_n100,"wrong fact: gives only 'British government', not the Indian participants."
+Ompal,32,aya-hi-test-c21c1ad403,Qwen2.5-1.5B-Instruct_zeroshot,loops: repeats generic claims and gives no supporting reasons.
+Ompal,33,aya-hi-test-c4edec4a08,Qwen2.5-1.5B-Instruct_zeroshot,wrong fact: Commander Shepard is the protagonist; answer invents a financial-market effect. English.
+Ompal,35,aya-hi-test-ce1660adc1,Qwen2.5-1.5B-Instruct_r16_n100,off-topic: no valid causes of climate change.
+Ompal,36,aya-hi-test-e81cb6f2fa,Qwen2.5-1.5B-Instruct_r16_n100,too vague: no actual story about saving food resources.
+Ompal,37,aya-hi-test-ef8bad9bd2,Qwen2.5-1.5B-Instruct_r16_n775,wrong fact: sentence does not complete the thought meaningfully.
+Ompal,38,aya-hi-test-39a94eb32e,Qwen2.5-1.5B-Instruct_zeroshot,wrong fact: correct option is रेफ्लीसिया.
+Ompal,39,aya-hi-test-22e3d49c04,Qwen2.5-1.5B-Instruct_r16_n100,wrong fact: NPTEL is the coordinator; IIT Bombay/Delhi are not the answer.
+Ompal,41,aya-hi-test-d38467a697,Qwen2.5-1.5B-Instruct_zeroshot,loops: incoherent and repetitive; requested story is missing.
+Ompal,42,aya-hi-test-e81cb6f2fa,Qwen2.5-1.5B-Instruct_r16_n775,loops: repeats the same sentence; no story.
+Ompal,43,aya-hi-test-8d2a64550b,Qwen2.5-1.5B-Instruct_zeroshot,wrong fact: answer confuses the TV show with unrelated university events.
+Ompal,44,aya-hi-test-c812055d6f,Qwen2.5-1.5B-Instruct_zeroshot,English: substantial English mixed into Hindi; repetitive.
+Ompal,45,aya-hi-test-7f419cd934,Qwen2.5-1.5B-Instruct_r16_n100,off-topic: no valid explanation of India's monsoon climate.
+Ompal,46,aya-hi-test-c4edec4a08,Qwen2.5-1.5B-Instruct_r16_n775,wrong fact: Commander Shepard is the main character.
+Ompal,47,aya-hi-test-a0436fd8e8,Qwen2.5-1.5B-Instruct_r16_n100,wrong fact: does not explain why Rajya Sabha is permanent.
+Ompal,48,aya-hi-test-95fcdbaf6e,Qwen2.5-1.5B-Instruct_zeroshot,off-topic: garbled drug description and invented details.
+Ompal,49,aya-hi-test-7619bd7a03,Qwen2.5-1.5B-Instruct_zeroshot,off-topic: not a romantic poem; repeated unrelated phrases.
+Ompal,51,aya-hi-test-bc9ad417e1,Qwen2.5-1.5B-Instruct_zeroshot,"wrong fact: 😑 is a neutral/unamused face, not 😊."
+Ompal,52,aya-hi-test-032c3df39c,Qwen2.5-1.5B-Instruct_r16_n100,"wrong fact: अपठित means 'बिना पढ़ा हुआ', not 'समझौता'."
+Ompal,53,aya-hi-test-2208927bbf,Qwen2.5-1.5B-Instruct_r16_n775,wrong fact: India's first woman PM was Indira Gandhi.
+Ompal,54,aya-hi-test-39a94eb32e,Qwen2.5-1.5B-Instruct_r16_n100,wrong fact: correct answer is रेफ्लीसिया.
+Ompal,55,aya-hi-test-99269a5eca,Qwen2.5-1.5B-Instruct_r16_n775,wrong fact: fabricated political-career details.
+Ompal,56,aya-hi-test-2208927bbf,Qwen2.5-1.5B-Instruct_r16_n100,wrong fact: India's first woman PM was Indira Gandhi.
+Ompal,57,aya-hi-test-9c2c968d2f,Qwen2.5-1.5B-Instruct_r16_n100,"wrong fact: it is Newton's third law, not fourth."
+Ompal,58,aya-hi-test-a0436fd8e8,Qwen2.5-1.5B-Instruct_r16_n775,loops: repeated sentence; does not give the actual reason.
+Ompal,59,aya-hi-test-99269a5eca,Qwen2.5-1.5B-Instruct_zeroshot,off-topic: fabricated and incoherent political-career description.
+Ompal,60,aya-hi-test-31726e8ce4,Qwen2.5-1.5B-Instruct_r16_n100,loops: repeats a fragment about the word COVID; no essay.
+Ompal,61,aya-hi-test-30971c0304,Qwen2.5-1.5B-Instruct_zeroshot,off-topic: garbled text; does not explain COVID-19.
+Ompal,62,aya-hi-test-8ddcb8bc34,Qwen2.5-1.5B-Instruct_zeroshot,off-topic: repeated unrelated COVID wording; no essay.
+Ompal,63,aya-hi-test-8d2a64550b,Qwen2.5-1.5B-Instruct_r16_n775,unsure: gives a date without context; reference only identifies the network.
+Ompal,64,aya-hi-test-9f21661f82,Qwen2.5-1.5B-Instruct_zeroshot,off-topic: invented app features; does not state the actual reason.
+Ompal,65,aya-hi-test-c21c1ad403,Qwen2.5-1.5B-Instruct_r16_n775,"wrong fact: claims the industries were modernized, without relevant reasons."
+Ompal,66,aya-hi-test-30971c0304,Qwen2.5-1.5B-Instruct_r16_n100,copies prompt: repeats the instruction rather than developing the idea.
+Ompal,67,aya-hi-test-0892ca8453,Qwen2.5-1.5B-Instruct_r16_n100,off-topic: fabricated institutions; not a useful essay.
+Ompal,68,aya-hi-test-22e3d49c04,Qwen2.5-1.5B-Instruct_zeroshot,"wrong fact: coordinator is NPTEL, not Swarnjayanti Sammanvaya Kendra."
+Ompal,69,aya-hi-test-8ddcb8bc34,Qwen2.5-1.5B-Instruct_r16_n100,wrong fact: translation should be 'How are you today?'. English.
+Ompal,70,aya-hi-test-7a99dfe3aa,Qwen2.5-1.5B-Instruct_zeroshot,wrong fact: invented representative; repeated phrase.
+Ompal,72,aya-hi-test-7f419cd934,Qwen2.5-1.5B-Instruct_r16_n775,wrong fact: confuses monsoon climate with climate change and warming.
+Ompal,73,aya-hi-test-30971c0304,Qwen2.5-1.5B-Instruct_r16_n775,loops: repeats unrelated phrases; no developed science-fiction idea.
+Ompal,74,aya-hi-test-4381743ffc,Qwen2.5-1.5B-Instruct_r16_n775,too short: does not meaningfully develop the requested time-travel story.
+Ompal,75,aya-hi-test-032c3df39c,Qwen2.5-1.5B-Instruct_zeroshot,"wrong fact: अपठित means 'बिना पढ़ा हुआ', not 'समझा'."
+Ompal,76,aya-hi-test-31726e8ce4,Qwen2.5-1.5B-Instruct_zeroshot,off-topic: garbled text; not a usable COVID-19 essay.
+Ompal,77,aya-hi-test-9f21661f82,Qwen2.5-1.5B-Instruct_r16_n100,off-topic: invented app benefits; misses the stated purpose.
+Ompal,79,aya-hi-test-c4edec4a08,Qwen2.5-1.5B-Instruct_r16_n100,wrong fact: Commander Shepard is the protagonist; 'Masa' is incorrect. English.
+Ompal,80,aya-hi-test-e81cb6f2fa,Qwen2.5-1.5B-Instruct_zeroshot,off-topic: no food-saving story.
+Ompal,81,aya-hi-test-d38467a697,Qwen2.5-1.5B-Instruct_r16_n100,loops: repeats the same sentence; no coherent story.
+Ompal,82,aya-hi-test-bc9ad417e1,Qwen2.5-1.5B-Instruct_r16_n100,"wrong fact: 😑 is an unamused face, not a happy face."
+Ompal,83,aya-hi-test-13dc64a6d8,Qwen2.5-1.5B-Instruct_zeroshot,cut off: starts with the correct answer but adds fabricated explanation and stops mid-sentence.
+Ompal,84,aya-hi-test-ce1660adc1,Qwen2.5-1.5B-Instruct_zeroshot,off-topic: nonsensical causes; no valid climate explanation.
+Ompal,85,aya-hi-test-ef8bad9bd2,Qwen2.5-1.5B-Instruct_zeroshot,copies question: repeats the incomplete sentence without completing it.
+Ompal,86,aya-hi-test-4381743ffc,Qwen2.5-1.5B-Instruct_r16_n100,loops: repeated sentence; no coherent time-travel adventure.
+Ompal,87,aya-hi-test-ce1660adc1,Qwen2.5-1.5B-Instruct_r16_n775,off-topic: nonsensical explanation of climate change.
+Ompal,88,aya-hi-test-bc9ad417e1,Qwen2.5-1.5B-Instruct_r16_n775,wrong fact: 😑 is not a happy-face emoji.
+Ompal,89,aya-hi-test-0892ca8453,Qwen2.5-1.5B-Instruct_zeroshot,off-topic: fabricated institutions; not a useful essay.
+Ompal,90,aya-hi-test-7a390c3ed4,Qwen2.5-1.5B-Instruct_r16_n775,"language issue: repetitive, unclear wording; conclusion is unsupported."

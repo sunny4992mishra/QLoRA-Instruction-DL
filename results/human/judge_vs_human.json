@@ -1,0 +1,96 @@
+{
+ "raters": [
+  "Ompal",
+  "Pranjal",
+  "Shahid",
+  "Sunny"
+ ],
+ "systems": [
+  "Qwen2.5-1.5B-Instruct_r16_n100",
+  "Qwen2.5-1.5B-Instruct_r16_n775",
+  "Qwen2.5-1.5B-Instruct_zeroshot"
+ ],
+ "criteria": {
+  "correctness": {
+   "n_answers": 90,
+   "kappa_judge_vs_rater": 0.8225979174562545,
+   "kappa_rater_vs_rater": 0.8028630979605266,
+   "kappa_rater_vs_rater_min": 0.7099567099567099,
+   "kappa_rater_vs_rater_max": 0.9602122015915119,
+   "judge_at_least_lowest_pair": true,
+   "exact": 0.7083333333333334,
+   "within_1": 0.9583333333333334,
+   "spearman_rho": 0.7296224523269075,
+   "mean_difference_judge_minus_human": -0.016666666666666666,
+   "by_system": {
+    "Qwen2.5-1.5B-Instruct_r16_n100": {
+     "judge": 1.6333333333333333,
+     "human": 1.6583333333333334
+    },
+    "Qwen2.5-1.5B-Instruct_r16_n775": {
+     "judge": 1.9,
+     "human": 1.9333333333333333
+    },
+    "Qwen2.5-1.5B-Instruct_zeroshot": {
+     "judge": 1.4666666666666666,
+     "human": 1.4583333333333333
+    }
+   },
+   "same_system_order": true
+  },
+  "helpfulness": {
+   "n_answers": 90,
+   "kappa_judge_vs_rater": 0.7632299893405969,
+   "kappa_rater_vs_rater": 0.7750520009455979,
+   "kappa_rater_vs_rater_min": 0.6801505174035747,
+   "kappa_rater_vs_rater_max": 0.9551301226443314,
+   "judge_at_least_lowest_pair": true,
+   "exact": 0.6638888888888889,
+   "within_1": 0.9694444444444444,
+   "spearman_rho": 0.6423575561985139,
+   "mean_difference_judge_minus_human": -0.013888888888888888,
+   "by_system": {
+    "Qwen2.5-1.5B-Instruct_r16_n100": {
+     "judge": 1.7,
+     "human": 1.6416666666666666
+    },
+    "Qwen2.5-1.5B-Instruct_r16_n775": {
+     "judge": 1.9333333333333333,
+     "human": 1.9583333333333333
+    },
+    "Qwen2.5-1.5B-Instruct_zeroshot": {
+     "judge": 1.3333333333333333,
+     "human": 1.4083333333333334
+    }
+   },
+   "same_system_order": true
+  },
+  "fluency": {
+   "n_answers": 90,
+   "kappa_judge_vs_rater": 0.7102733735555609,
+   "kappa_rater_vs_rater": 0.7754741250320006,
+   "kappa_rater_vs_rater_min": 0.7011691884456671,
+   "kappa_rater_vs_rater_max": 0.962976813762154,
+   "judge_at_least_lowest_pair": true,
+   "exact": 0.45224719101123595,
+   "within_1": 0.9185393258426966,
+   "spearman_rho": 0.7965803174982533,
+   "mean_difference_judge_minus_human": -0.3527777777777778,
+   "by_system": {
+    "Qwen2.5-1.5B-Instruct_r16_n100": {
+     "judge": 2.6,
+     "human": 3.058333333333333
+    },
+    "Qwen2.5-1.5B-Instruct_r16_n775": {
+     "judge": 2.6666666666666665,
+     "human": 2.8833333333333333
+    },
+    "Qwen2.5-1.5B-Instruct_zeroshot": {
+     "judge": 1.8,
+     "human": 2.183333333333333
+    }
+   },
+   "same_system_order": false
+  }
+ }
+}
