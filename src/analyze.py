@@ -21,7 +21,8 @@ The run name joins the three sources: runs/<run>/, results/<run>.jsonl, results/
 The zero-shot run has no run_info.json; it is drawn as a dashed reference line.
 
 Outputs:
-    results/summary.csv, results/summary.md     one row per run
+    results/summary.csv, results/summary.md     one row per run; summary.md also has paired
+                                                differences in judge scores between runs
     figures/quality_vs_rank.png                 rank sweep (all data)
     figures/quality_vs_data_size.png            data-size sweep (r = 16)
     figures/quality_vs_memory.png               judge score against peak GPU memory
@@ -196,9 +197,47 @@ def collect(runs_dir, results_dir, judge_dir):
             row.update(answer_stats(answers))
         jud = judge_dir / f"{name}.jsonl"
         if jud.exists():
-            row.update(judge_stats(check_judge_ids(name, load_jsonl(jud), answer_ids)))
+            kept = check_judge_ids(name, load_jsonl(jud), answer_ids)
+            row.update(judge_stats(kept))
+            row["judge_by_id"] = {r.get("id"): {ALIASES.get(k, k): v for k, v in r.items()} for r in kept}
         table.append(row)
     return table
+
+
+def short(name):
+    """Qwen2.5-1.5B-Instruct_r16_n775 -> r16_n775."""
+    return name.split("_", 1)[1] if "_" in name else name
+
+
+def paired_difference(a, b, criterion=None):
+    """Mean of (a - b) over the prompts both runs have scores for, with a 95% half-width.
+
+    All runs answer the same test prompts, so runs are compared prompt by prompt. This gives a
+    much tighter interval for a difference than two separate per-run intervals. With
+    criterion=None the mean of the three criteria is compared.
+    """
+    ja, jb = a.get("judge_by_id") or {}, b.get("judge_by_id") or {}
+    crit = [criterion] if criterion else CRITERIA
+    diffs = []
+    for rid in ja.keys() & jb.keys():
+        va, vb = [ja[rid].get(c) for c in crit], [jb[rid].get(c) for c in crit]
+        if all(is_score(v) for v in va + vb):
+            diffs.append(sum(va) / len(va) - sum(vb) / len(vb))
+    return mean_ci(diffs) + (len(diffs),)
+
+
+def comparisons(table):
+    """Pairs (a, b) to report as a - b: every run against zero-shot, then steps along each sweep."""
+    judged = [r for r in table if r.get("judge_by_id")]
+    zs = next((r for r in judged if r["zeroshot"]), None)
+    trained = sorted((r for r in judged if not r["zeroshot"] and r["rank"] is not None), key=sort_key)
+    pairs = [(r, zs) for r in trained] if zs else []
+    for sweep in (sorted((r for r in trained if r["train_rows"] == FULL_N), key=lambda r: r["rank"]),
+                  sorted((r for r in trained if r["rank"] == SWEEP_RANK), key=lambda r: r["train_rows"])):
+        pairs += [(hi, lo) for lo, hi in zip(sweep, sweep[1:])]
+        if len(sweep) > 2:
+            pairs.append((sweep[-1], sweep[0]))
+    return pairs
 
 
 # ---------------------------------------------------------------- table
@@ -241,6 +280,21 @@ def write_tables(table, results_dir):
             "three criteria per answer. 95% intervals are in summary.csv. Median characters is "
             "the mean of the two middle values when the number of answers is even "
             "(`statistics.median`).\n")
+    pairs = comparisons(table)
+    if pairs:
+        def cell(a, b, c):
+            mu, ci, _ = paired_difference(a, b, c)
+            if mu is None:
+                return "–"
+            return f"{mu:+.2f} ± {ci:.2f}" + (" *" if ci is not None and abs(mu) > ci else "") if ci is not None else f"{mu:+.2f}"
+        note += ("\n## Paired differences in judge scores\n\n"
+                 "Each row is A − B over the test prompts both runs were judged on, with a 95% interval. "
+                 "\\* marks an interval that excludes 0.\n\n"
+                 "| A − B | Correctness | Helpfulness | Fluency | Judge mean | Prompts |\n|---|---:|---:|---:|---:|---:|\n")
+        for a, b in pairs:
+            n = paired_difference(a, b)[2]
+            note += (f"| {short(a['run'])} − {short(b['run'])} | " + " | ".join(cell(a, b, c) for c in CRITERIA)
+                     + f" | {cell(a, b, None)} | {n} |\n")
     (results_dir / "summary.md").write_text("\n".join(lines) + "\n" + note, encoding="utf-8")
 
 
@@ -278,11 +332,13 @@ def line(ax, xs, ys, cis, key, label, width=2.0):
                     elinewidth=1, capsize=3, alpha=0.6, zorder=2)
 
 
-def zeroshot_line(ax, zs, key):
+def zeroshot_line(ax, zs, key, label=None):
+    """Dashed reference line. With a label it goes in the legend; otherwise it is named on the line."""
     if zs and zs.get(key) is not None:
-        ax.axhline(zs[key], color=INK_2, linestyle="--", linewidth=1, zorder=1)
-        ax.annotate("zero-shot", (0, zs[key]), xycoords=("axes fraction", "data"),
-                    xytext=(2, 3), textcoords="offset points", fontsize=8, color=INK_2)
+        ax.axhline(zs[key], color=INK_2, linestyle="--", linewidth=1, zorder=1, label=label)
+        if not label:
+            ax.annotate("zero-shot", (0, zs[key]), xycoords=("axes fraction", "data"),
+                        xytext=(2, 3), textcoords="offset points", fontsize=8, color=INK_2)
 
 
 def sweep_figure(rows, zs, xkey, xlabel, title, path, log2=False):
@@ -301,10 +357,13 @@ def sweep_figure(rows, zs, xkey, xlabel, title, path, log2=False):
                 line(a1, xs, [r.get(c) for r in rows], [r.get(c + "_ci") for r in rows], c, c)
             line(a1, xs, [r.get("judge_mean") for r in rows],
                  [r.get("judge_mean_ci") for r in rows], "mean", "mean", width=2.5)
-            zeroshot_line(a1, zs, "judge_mean")
+            # The lines can sit close to the zero-shot level, so it is named in the legend,
+            # and the legend goes where the scores are not.
+            zeroshot_line(a1, zs, "judge_mean", label="zero-shot (mean)")
             a1.set_ylim(1, 5)
             style(a1, xlabel, "LLM-judge score (1–5)")
-            a1.legend(frameon=False, fontsize=8, loc="lower right")
+            top = max((r.get(c) or 0) + (r.get(c + "_ci") or 0) for r in rows for c in CRITERIA + ["judge_mean"])
+            a1.legend(frameon=False, fontsize=8, loc="upper right" if top < 3.6 else "lower right")
         else:
             line(a1, xs, [r.get("devanagari_pct") for r in rows], [None] * len(rows), "deva", "")
             zeroshot_line(a1, zs, "devanagari_pct")
