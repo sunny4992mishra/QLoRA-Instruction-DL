@@ -16,7 +16,10 @@
         "token_len_p50": 363,
         "token_len_p95": 1913,
         "token_len_max": 21037,
-        "response_tokens_lost_pct": 34.47
+        "response_tokens": 327008,
+        "response_tokens_lost": 112736,
+        "response_tokens_lost_pct": 34.47,
+        "top25_rows_share_of_lost_pct": 69.2
       },
       "val_tokens": {
         "rows": 61,
@@ -26,7 +29,10 @@
         "token_len_p50": 373,
         "token_len_p95": 1539,
         "token_len_max": 2698,
-        "response_tokens_lost_pct": 24.13
+        "response_tokens": 22890,
+        "response_tokens_lost": 5523,
+        "response_tokens_lost_pct": 24.13,
+        "top25_rows_share_of_lost_pct": 100.0
       }
     },
     "sarvamai/sarvam-1": {
@@ -44,7 +50,10 @@
         "token_len_p50": 115,
         "token_len_p95": 616,
         "token_len_max": 7288,
-        "response_tokens_lost_pct": 9.94
+        "response_tokens": 98710,
+        "response_tokens_lost": 9814,
+        "response_tokens_lost_pct": 9.94,
+        "top25_rows_share_of_lost_pct": 100.0
       },
       "val_tokens": {
         "rows": 61,
@@ -54,7 +63,10 @@
         "token_len_p50": 118,
         "token_len_p95": 477,
         "token_len_max": 818,
-        "response_tokens_lost_pct": 0.0
+        "response_tokens": 6780,
+        "response_tokens_lost": 0,
+        "response_tokens_lost_pct": 0.0,
+        "top25_rows_share_of_lost_pct": null
       }
     }
   }

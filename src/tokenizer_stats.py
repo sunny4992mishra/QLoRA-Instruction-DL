@@ -37,7 +37,7 @@ def load_jsonl(path):
 def length_stats(rows, tok, max_len):
     """Same keys and rules as tokenize() in train.py, plus response tokens lost to the limit."""
     lengths, n_truncated, n_dropped = [], 0, 0
-    response_tokens, response_tokens_lost = 0, 0
+    response_tokens, lost_per_row = 0, []
     for r in rows:
         prompt, response = build_example(tok, r["instruction"], r["response"])
         n_prompt = len(tok(prompt, add_special_tokens=False)["input_ids"])
@@ -46,16 +46,21 @@ def length_stats(rows, tok, max_len):
         response_tokens += n_response
         if n_prompt >= max_len:
             n_dropped += 1
-            response_tokens_lost += n_response
+            lost_per_row.append(n_response)
         elif n_prompt + n_response > max_len:
             n_truncated += 1
-            response_tokens_lost += n_prompt + n_response - max_len
+            lost_per_row.append(n_prompt + n_response - max_len)
     sorted_lengths = sorted(lengths)
     pct = lambda q: sorted_lengths[min(len(sorted_lengths) - 1, int(q * len(sorted_lengths)))]
+    lost = sum(lost_per_row)
+    top25 = sum(sorted(lost_per_row, reverse=True)[:25])
     info = {"rows": len(rows), "kept": len(rows) - n_dropped, "truncated": n_truncated,
             "dropped_prompt_too_long": n_dropped,
             "token_len_p50": pct(0.5), "token_len_p95": pct(0.95), "token_len_max": sorted_lengths[-1],
-            "response_tokens_lost_pct": round(100 * response_tokens_lost / response_tokens, 2)}
+            "response_tokens": response_tokens, "response_tokens_lost": lost,
+            "response_tokens_lost_pct": round(100 * lost / response_tokens, 2),
+            # How concentrated the loss is: share of the lost tokens that come from the 25 rows losing most.
+            "top25_rows_share_of_lost_pct": round(100 * top25 / lost, 1) if lost else None}
     return info, lengths
 
 
