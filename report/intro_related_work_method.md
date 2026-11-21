@@ -40,8 +40,8 @@ Cost is measured as peak GPU memory, training time and the number of trainable p
 Our contributions are:
 
 1. A cleaned Hindi instruction split from the Aya Dataset, split by prompt so that no test
-   prompt appears word for word in training (35 of 150 have a near-copy), with an analysis of how the Qwen2.5 tokenizer handles Hindi
-   (Section [Data]).
+   prompt appears word for word in training (35 of 150 have a near-copy), with an analysis of
+   how the Qwen2.5 tokenizer handles Hindi (Section [Data]).
 2. A reproducible QLoRA pipeline that fits on a free 16 GB T4 GPU, with eight fine-tuning runs
    that use identical settings apart from rank or data size, plus a zero-shot baseline
    (Section 3).
