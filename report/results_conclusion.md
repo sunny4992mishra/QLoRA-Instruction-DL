@@ -110,7 +110,9 @@ validation prompts have a near-copy in training (Section [Data]).
 
 **Table R3.** Length, cut-offs and looping in the 150 test answers per system, counted with the
 Qwen2.5 tokenizer. "At the limit" means the answer ran to the 512-token generation limit.
-"Looping" means the same 8-word phrase appears three or more times. For the reference answers,
+"Looping" means the same 8-word phrase appears three or more times, whether or not the answer
+reaches the limit. The error analysis counts a loop only if the answer also reaches the limit,
+so its counts are lower or equal (for r = 4, 38 against 43 here). For the reference answers,
 "at the limit" counts those that are themselves 510 tokens or longer.
 
 | System | Median tokens | At the limit | Looping | Mostly Devanagari |
