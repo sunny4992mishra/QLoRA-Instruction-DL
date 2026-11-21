@@ -1,15 +1,16 @@
 # P16 report: Results, Conclusion
 
-Draft for issue #7 (Sunny). Section, table and figure numbers are placeholders until the report
+Draft (Sunny). Section, table and figure numbers are placeholders until the report
 is assembled; tables and figures here are numbered R1, R2, …. Cross-references to other sections
 are marked like `Section [Evaluation]`.
 
-**Status.** Cost, validation loss, the form of the answers and the LLM-judge scores are written.
-The human ratings (#14) are still marked **[PENDING]** and are not filled with guesses.
+**Status.** Complete, including the human ratings.
 
 All numbers come from `runs/*/run_info.json`, `results/*.jsonl`, `results/judge/*.jsonl` and
 `data/test_near_duplicates.json`. They are reproduced by `python src/analyze.py` (Tables R1, R2,
-R4 to R7, Figures R1–R4) and `python src/answer_stats.py` (Table R3). Memory is reported in GB as PyTorch counts it, with
+R4 to R7, Figures R1–R4) and `python src/answer_stats.py` (Table R3). Table R8 comes from
+`python src/collect_ratings.py` and the judge files. Table R9 gives paired differences over the
+rated prompts, from `results/human/scores.jsonl`, with the same interval as `analyze.py`. Memory is reported in GB as PyTorch counts it, with
 1 GB = 1024³ bytes.
 
 ---
@@ -319,11 +320,63 @@ share a topic but not a task (Section [Data]).
 
 ### 4.6 Answer quality: human ratings
 
-**[PENDING: human ratings, #14.]** Mean scores per criterion for zero-shot, r16_n775 and
-r16_n100 from the four raters (`results/human/summary.md`), and whether they rank the three
-systems in the same order as the judge (zero-shot 1.63, r16_n100 1.83, r16_n775 2.06). 8 of the
-30 rated prompts are near-duplicates (Section 4.5). Agreement between raters and between judge
-and humans is reported in Section [Evaluation].
+The four authors rated the same 90 answers: 30 test prompts for each of zero-shot, r16_n100 and
+r16_n775 (Section [Evaluation]). The rated systems do not include the rank sweep or N = 250 and
+500, so the human scores cannot test the findings on rank or on the step from 250 to 500 rows.
+
+**Table R8.** Mean human scores (four raters, 1 to 5) on the 30 rated prompts, with 95% intervals,
+and the judge's mean on the same 90 answers.
+
+| System | Correctness | Helpfulness | Hindi fluency | Human mean | Judge mean (same answers) |
+|---|---:|---:|---:|---:|---:|
+| Zero-shot | 1.46 ± 0.23 | 1.41 ± 0.19 | 2.18 ± 0.26 | 1.68 ± 0.16 | 1.53 |
+| r16_n100 | 1.66 ± 0.37 | 1.64 ± 0.31 | 3.06 ± 0.42 | 2.12 ± 0.30 | 1.98 |
+| r16_n775 | 1.93 ± 0.49 | 1.96 ± 0.47 | 2.88 ± 0.44 | 2.26 ± 0.44 | 2.17 |
+
+**Table R9.** Paired differences in the human mean over the same prompts, with 95% intervals. \*
+marks an interval that excludes 0.
+
+| Comparison | All 30 prompts | 22 without a near-copy | 28 without the two non-Hindi answers |
+|---|---:|---:|---:|
+| r16_n775 − zero-shot | +0.57 ± 0.37 * | +0.50 ± 0.38 * | +0.37 ± 0.26 * |
+| r16_n100 − zero-shot | +0.44 ± 0.21 * | +0.53 ± 0.27 * | +0.46 ± 0.23 * |
+| r16_n775 − r16_n100 | +0.14 ± 0.42 | −0.03 ± 0.41 | −0.09 ± 0.30 |
+
+**The raters confirm that fine-tuning helps.** Both fine-tuned systems score above zero-shot, on
+all 30 prompts, on the 22 without a near-copy in training, and with any one rater left out.
+r16_n775 is better than zero-shot on 21 of the 30 prompts and worse on 6. r16_n100 is better on 22
+and worse on 4.
+
+**The raters cannot separate 100 rows from 775.** The difference is +0.14 ± 0.42, and r16_n775 is
+better on 12 prompts and worse on 14. The mean order is the same as the judge's (zero-shot,
+r16_n100, r16_n775), but the order of the two fine-tuned systems is not reliable. It reverses when
+the two prompts discussed below are left out, and one of the four raters puts r16_n100 first.
+
+**The gain in correctness is clear only for r16_n775.** It gains +0.47 ± 0.40 in correctness over
+zero-shot, while r16_n100 gains +0.20 ± 0.28. This agrees with the judge's pattern that content
+needs more data than form, but the direct difference between the two is not distinguishable from
+zero (+0.28 ± 0.48).
+
+**On fluency, the raters and the judge differ.** The raters give r16_n100 the highest fluency
+(3.06, against 2.88 for r16_n775), and the judge gives r16_n775 a slightly higher score (2.67
+against 2.60). The difference between the two systems is within the noise for the raters (−0.17 ±
+0.48). The rating sheet asks for fluency on the language only and counts looping against
+helpfulness, while the judge counts looping against fluency (Section [Evaluation]), which may
+contribute to this gap.
+
+**Two answers were scored differently.** Items 2 and 9 are r16_n775 answers whose correct output
+is not Hindi: an English translation and the single word "NPTEL". Two raters left their Hindi
+fluency blank as not applicable, and two gave them 5. Their fluency mean therefore comes from two
+raters. Without these two answers, the fluency of r16_n775 is 2.73 instead of 2.88.
+
+**One pair of raters agrees unusually closely.** Their weighted κ is 0.96 on all three criteria,
+against 0.68 to 0.84 for the other five pairs, and they give identical scores on all three
+criteria for 66 of the 90 answers. The two raters report that they rated independently. Leaving
+out either one gives Krippendorff's α of 0.72 to 0.78 instead of 0.78 to 0.80, and does not change
+the findings above.
+
+8 of the 30 rated prompts are near-duplicates (Section 4.5). Agreement between raters and between
+the judge and the humans is reported in Section [Evaluation].
 
 ### 4.7 Quality against cost
 
@@ -377,8 +430,10 @@ the judge.
    most 4 of 150 per run), and most of them get correctness 5. The larger gain on the 35
    near-duplicate prompts mostly reflects the kind of prompt, not memorisation.
 
-**[PENDING: human ratings.]** Whether the four raters rank zero-shot, r16_n100 and r16_n775 in
-the same order as the judge, in one or two sentences.
+**Human ratings.** On 30 prompts, the four raters also score both fine-tuned systems above
+zero-shot (+0.57 ± 0.37 for r16_n775 and +0.44 ± 0.21 for r16_n100). They cannot separate 775 rows
+from 100 (+0.14 ± 0.42). The human sample did not include other ranks or 250 and 500 rows, so our
+answer of about 500 rows and no rank above r = 4 rests on the LLM judge.
 
 **Limits of these results.** Each setting was run once, so small differences may be noise and
 the N = 250 outlier cannot be explained. The data-size sweep changes the number of training
