@@ -56,5 +56,7 @@ The rank sweep is r = 4, 8, 16, 32, 64 on all data. The data-size sweep is N = 1
    - `runs/<run name>/run_info.json` (memory, time, losses)
 
    Adapters and checkpoints stay out of git. `.gitignore` handles this.
+
+   Run `python src/check_run.py <run name>` before opening the PR and paste its output into the PR description. The reviewer runs it again.
 5. Don't regenerate the data split and don't change default hyperparameters. Either change makes the runs incomparable.
 6. Never commit API keys. Read them from an environment variable.

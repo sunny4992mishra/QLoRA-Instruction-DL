@@ -30,6 +30,7 @@ src/
   train.py                QLoRA fine-tuning, logs memory/time/loss to run_info.json
   generate.py             answers the test prompts, with or without an adapter
   tokenizer_stats.py      tokenizer analysis (no GPU needed)
+  check_run.py            checks a run's committed files against the expected settings and counts
   utils.py                model/tokenizer loading, GPU memory stats
 requirements.txt
 ```
@@ -112,6 +113,8 @@ On our training data, the Qwen2.5 tokenizer averages **1.09 characters per token
 6. Plot quality against rank, data size and peak GPU memory.
 
 Section 5 of the notebook runs steps 2 and 3. The notebook writes answers to `SAVE/results/`. Copy those `*.jsonl` files into the repo's `results/` folder and commit them, so everyone evaluates the same outputs. Adapters stay out of git: only `run_info.json` is tracked under `runs/`.
+
+Before committing a run, check it with `python src/check_run.py <run name>`. It needs no GPU. It confirms that the run used the default settings, 4-bit and fp16 on a T4, and that the rows kept, trainable parameters, training steps and the 150 answers are what they should be. Every line must say PASS.
 
 ## Still to do
 
