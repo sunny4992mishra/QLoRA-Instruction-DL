@@ -100,6 +100,9 @@ def write_sheet(path, rater, items):
     ]
     for label, question, scale in CRITERIA.values():
         lines += [(label, Font(bold=True)), (question, None), (scale, None), ("", None)]
+    lines.append(("Some answers and references are long. If a cell is cut off, click it and read the full "
+                  "text in the formula bar.", None))
+    lines.append(("", None))
     lines.append(("Save the file under the same name when you're done.", None))
     for r, (text, font) in enumerate(lines, start=1):
         cell = guide.cell(row=r, column=1, value=text)
@@ -115,6 +118,10 @@ def write_sheet(path, rater, items):
         c.fill = PatternFill("solid", fgColor="DDDDDD")
     for it in items:
         ws.append([it["item"], it["instruction"], it["reference"], it["output"], None, None, None, None])
+        # openpyxl stores a string that starts with "=" as a formula, and Excel then shows an
+        # error instead of the text. One reference starts with "== ... ==". Force plain text.
+        for c in ws[ws.max_row][1:4]:
+            c.data_type = "s"
     last = len(items) + 1
     for i, w in enumerate(WIDTHS):
         ws.column_dimensions[chr(ord("A") + i)].width = w
