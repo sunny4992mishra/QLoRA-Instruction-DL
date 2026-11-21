@@ -98,7 +98,7 @@ rank and data size, not only the best result.
 **Tokenization of Hindi.** Petrov et al. (2023) show that tokenizers of multilingual models
 can need many times more tokens for the same text in some languages than in English, which
 raises cost and shortens the usable context. We see this effect in our data: the Qwen2.5
-tokenizer averages 1.09 characters per Hindi token, compared with 3.67 for Sarvam-1, a model
+tokenizer averages 1.09 characters per Hindi token, compared with 3.67 for Sarvam-1 (Sarvam AI, 2024), a model
 built for Indian languages. As a result, some training rows do not fit in our 1,024-token
 limit (Section [Data]).
 
@@ -260,6 +260,8 @@ as described in Section [Evaluation].
 - Petrov, A., La Malfa, E., Torr, P. H. S., and Bibi, A. (2023). Language model tokenizers
   introduce unfairness between languages. In *NeurIPS 2023*. arXiv:2305.15425.
 - Qwen Team (2024). Qwen2.5 technical report. arXiv:2412.15115.
+- Sarvam AI (2024). Sarvam 1: The first Indian language LLM. Blog post, 24 October 2024.
+  https://www.sarvam.ai/blogs/sarvam-1. Model: https://huggingface.co/sarvamai/sarvam-1
 - Singh, S., et al. (2024). Aya Dataset: An open-access collection for multilingual instruction
   tuning. In *ACL 2024*. arXiv:2402.06619.
 - Taori, R., Gulrajani, I., Zhang, T., Dubois, Y., Li, X., Guestrin, C., Liang, P., and

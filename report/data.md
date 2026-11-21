@@ -103,7 +103,7 @@ most affected by the length limit described next.
 ### Tokenization and the 1,024-token limit
 
 The Qwen2.5 tokenizer splits Hindi into short pieces. On the training text, it averages **1.09
-characters per token**. Sarvam-1, a 2B model built for Indian languages, averages 3.67, so Qwen2.5
+characters per token**. Sarvam-1 (Sarvam AI, 2024), a 2B model built for Indian languages, averages 3.67, so Qwen2.5
 needs 3.35 times as many tokens for the same text (413,967 against 123,511 tokens). The fixed
 Hindi system prompt and the chat template add 93 tokens to every example.
 
@@ -186,5 +186,7 @@ Two consequences follow for the other sections.
 
 ## References
 
+- Sarvam AI (2024). Sarvam 1: The first Indian language LLM. Blog post, 24 October 2024.
+  https://www.sarvam.ai/blogs/sarvam-1. Model: https://huggingface.co/sarvamai/sarvam-1
 - Singh, S., et al. (2024). Aya Dataset: An open-access collection for multilingual instruction
   tuning. In *ACL 2024*. arXiv:2402.06619.

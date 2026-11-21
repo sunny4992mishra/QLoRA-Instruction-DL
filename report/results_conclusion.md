@@ -446,7 +446,7 @@ limits of the judge and the human ratings.
 
 **Future work.** Repeat each setting with several seeds. Add a run with the epoch chosen by
 validation loss. Raise the 1,024-token limit, or use a base model with a more efficient Hindi
-tokenizer such as Sarvam-1, so that fewer training rows lose their ending (Section [Data]). Add
+tokenizer such as Sarvam-1 (Sarvam AI, 2024), so that fewer training rows lose their ending (Section [Data]). Add
 more Hindi instruction data from other sources to see whether quality rises again beyond 775
 rows. Split the data by near-duplicate groups of prompts, not by exact prompt, so that the test
 set measures only new instructions.
