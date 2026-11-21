@@ -135,9 +135,10 @@ already mostly in Devanagari, but 103 run to the length limit and 79 loop. The m
 **Fine-tuning teaches the model to stop.** Every fine-tuned run except N = 250 has a median
 length between 178.5 and 225 tokens, close to the references, and cuts the number of answers at
 the limit from 103 to between 32 and 49. Some long answers are legitimate: 26 of the references
-are themselves 510 tokens or longer. That still leaves 6 to 23 more answers at the limit than
-there are references of that length. Section 3.4 gives one likely cause: the 103 training rows
-that are cut at 1,024 tokens show no stopping point.
+are themselves 510 tokens or longer. But in every run, most answers at the limit are on prompts
+whose reference is shorter: 21 to 36 answers per run for the fine-tuned runs other than N = 250,
+and 31 of 49 for r16_n775. Section 3.4 gives one likely cause: the 103 training rows that are cut
+at 1,024 tokens show no stopping point.
 
 **100 rows are enough to fix the stopping, but not the looping.** The N = 100 run already
 brings the median to 224.5 tokens and the answers at the limit to 41, about the same as the
@@ -220,7 +221,9 @@ that have a near-copy in the training data.
 next, and not the whole range from r = 4 to r = 64 (+0.05 ± 0.14), is distinguishable from
 zero. The small, steady fall in validation loss with rank (Section 4.2) does not show up in the
 judge scores. Neither does the drop in looping: r = 64 loops in 15 answers and r = 16 in 35, and
-the judge scores them the same.
+the judge scores them the same. With 65% of correctness scores at the lowest value, the judge has
+little room to separate a bad answer from a worse one (Section [Evaluation]), so "no measurable
+difference" does not show that the ranks are equally good.
 
 **Data size helps in one step, between 250 and 500 rows (Figure R2, left panel).** The mean
 goes 1.83, 1.81, 2.08 and 2.06 for N = 100, 250, 500 and 775. The step from 250 to 500 rows is
@@ -232,13 +235,15 @@ although it loops in 71 answers against 46. Its fluency is the lowest of the fin
 (2.25), but not distinguishably lower than N = 100 (2.35). This holds on all 150 prompts. On the
 115 without a near-copy, N = 250 scores 1.69, the same as zero-shot (1.70).
 
-**Correctness improves only with enough data.** With 500 or 775 rows the gain in correctness
-over zero-shot is +0.23 to +0.35 and excludes 0. With 100 or 250 rows it does not (+0.09 ± 0.14
-and +0.12 ± 0.18), while helpfulness already improves. This fits the view in Section 2 that a
+**Correctness improves only with enough data.** For N = 500 and all five full-data ranks, the
+gain in correctness over zero-shot is +0.23 to +0.35 and excludes 0. With 100 or 250 rows it does
+not (+0.09 ± 0.14 and +0.12 ± 0.18), while helpfulness already improves. This fits the view in Section 2 that a
 little instruction data fixes the form of an answer before its content.
 
-These scores come from one judge model, which is not fully consistent with itself, and from one
-seed per setting. Section [Evaluation] discusses how far they can be trusted.
+These scores come from one judge model and from one seed per setting. The judge is not fully
+consistent with itself: on 258 pairs of identical answers (43 prompts) it scored 45% of the pairs
+differently, and the two sets of scores correlate at 0.80. Section [Evaluation] discusses how far
+the scores can be trusted.
 
 ### 4.5 Near-duplicate test prompts
 
@@ -289,7 +294,9 @@ not measure its size.
 
 **Direct evidence of memorisation is small.** Across the eight runs, 19 of the 1,200 answers
 are near-verbatim copies (`difflib` similarity ≥ 0.9) of a response in the run's own training
-rows: at most 4 of 150 per run, and none for N = 100. Of the 19, 13 are on flagged prompts and 15
+rows: at most 4 of 150 per run, and none for N = 100. They come from only 4 test prompts, and 12
+of the 19 also appear word for word in the prompt itself, so these may repeat the prompt and not
+recall training. Of the 19, 13 are on flagged prompts and 15
 get a correctness score of 5. Without its copied answers, the gain of r16_n775 on the 35 falls
 from +0.73 to +0.54. Thirteen of the 19 are only 17 or 18 characters long, so some may simply be
 a short correct answer and not a memorised one.
@@ -356,15 +363,16 @@ the judge.
    than five times as much as going from r = 4 to r = 64, and only data size moves the judge
    scores. The loss is still falling at 775 rows, which is all of our training split; the other
    241 clean rows are held out for validation and testing.
-3. **Higher ranks overfit sooner.** With three epochs, the validation loss of r = 32 and r = 64
-   rises in the last one. Choosing the epoch by validation loss, or training for two epochs,
-   might serve the higher ranks better than our fixed three.
+3. **Higher ranks overfit more.** With three epochs, the validation loss of every rank rises in
+   the last one, by +0.002 at r = 4 and up to +0.036 at r = 64. Choosing the epoch by validation
+   loss, or training for two epochs, might serve the higher ranks better than our fixed three.
 4. **Fine-tuning fixes the form of the answers more than their content.** The base model writes
    Hindi but does not stop: 103 of 150 answers run to the length limit. One hundred rows bring
-   the answer length close to the references. Correctness improves only from 500 rows on, and
-   stays below 2 out of 5.
+   the answer length close to the references but do not fix the looping. Correctness improves
+   only from 500 rows on, and stays below 2 out of 5.
 5. **Loss and form are not quality.** Validation loss falls steadily with rank and with the
-   last 275 rows, and looping falls with rank, but the judge scores do not follow either.
+   last 275 rows, and looping falls at the highest ranks, but the judge scores do not follow
+   either.
 6. **Memorisation is small.** A few answers copy a training response almost word for word (at
    most 4 of 150 per run), and most of them get correctness 5. The larger gain on the 35
    near-duplicate prompts mostly reflects the kind of prompt, not memorisation.
