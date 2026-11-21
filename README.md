@@ -126,6 +126,6 @@ Before committing a run, check it with `python src/check_run.py <run name>`. It 
 
 The work is split across the team in [TASKS.md](TASKS.md), with one GitHub issue per task.
 
-- [ ] LLM-judge script and fixed judge prompt
+- [x] LLM-judge script and fixed judge prompt
 - [x] Human rating sheet (blind, randomised order)
 - [x] Plotting and results table (`src/analyze.py`)

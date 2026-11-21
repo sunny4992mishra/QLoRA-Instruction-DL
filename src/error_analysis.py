@@ -22,9 +22,9 @@ not_hindi, loops and the cut_off test use only the text. A loop counts as an err
 the judge accepts the start of the answer, so "ok" is not the same as judge correctness >= 3;
 a cut-off answer the judge accepts counts as ok. A wrong answer that restates the question
 but has judge fluency >= 4 is wrong_fluent, not copies_prompt, because the rule for fluent
-answers comes first. An answer "reaches
-the limit" if re-tokenizing it gives at least 510 tokens: no answer stops between 505 and 509,
-and the ones below 505 all end on a complete sentence. A cut-off answer is not always a
+answers comes first. An answer "reaches the limit" if re-tokenizing it gives at least 510
+tokens: no answer stops between 505 and 509, and the ones below 505 all end on a complete
+sentence. A cut-off answer is not always a
 mistake, because some references are longer than 512 tokens too; the summary counts those.
 
 Outputs:
