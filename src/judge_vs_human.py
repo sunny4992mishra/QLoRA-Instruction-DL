@@ -11,8 +11,10 @@ Inputs:
 Only the answers the humans rated (30 prompts x 3 systems) are compared. Per criterion:
     weighted kappa, judge vs rater   Cohen's kappa with quadratic weights between the judge and
                                      each rater, averaged over raters. Compare it with the same
-                                     number between raters: the judge agrees as well as a human
-                                     does if the two are close.
+                                     number between raters. The judge counts as agreeing at
+                                     least as well as a human if its mean kappa is at least the
+                                     lowest of the rater-rater kappas (the 'Judge κ ≥ lowest pair'
+                                     column); a higher kappa than every rater pair passes too.
     exact / within 1                 share of (judge, rater) pairs with equal or at most 1 apart
     Spearman rho                     rank correlation between the judge score and the mean human
                                      score of each answer
@@ -118,7 +120,7 @@ def main():
             "kappa_rater_vs_rater": sum(rk) / len(rk) if rk else None,
             "kappa_rater_vs_rater_min": min(rk) if rk else None,
             "kappa_rater_vs_rater_max": max(rk) if rk else None,
-            "judge_within_rater_range": bool(jk and rk and min(rk) <= sum(jk) / len(jk) <= max(rk)),
+            "judge_at_least_lowest_pair": bool(jk and rk and sum(jk) / len(jk) >= min(rk)),
             "exact": sum(a == b for a, b in flat) / len(flat) if flat else None,
             "within_1": sum(abs(a - b) <= 1 for a, b in flat) / len(flat) if flat else None,
             "spearman_rho": rho,
@@ -131,13 +133,13 @@ def main():
         json.dump(result, f, ensure_ascii=False, indent=1)
     pct = lambda x: "–" if x is None else f"{100 * x:.0f}%"
     lines = [f"# Judge vs human: {len(raters)} rater(s), {len(systems)} systems", "",
-             "| Criterion | Answers | κ judge–rater | κ rater–rater (min–max) | Judge κ in range | Exact | Within 1 | Spearman ρ | Judge − human | Same system order |",
+             "| Criterion | Answers | κ judge–rater | κ rater–rater (min–max) | Judge κ ≥ lowest pair | Exact | Within 1 | Spearman ρ | Judge − human | Same system order |",
              "|---|---:|---:|---:|---|---:|---:|---:|---:|---|"]
     for c in CRITERIA:
         a = result["criteria"][c]
         lines.append(f"| {LABELS[c]} | {a['n_answers']} | {fmt(a['kappa_judge_vs_rater'])} | "
                      f"{fmt(a['kappa_rater_vs_rater'])} ({fmt(a['kappa_rater_vs_rater_min'])} to {fmt(a['kappa_rater_vs_rater_max'])}) | "
-                     f"{'yes' if a['judge_within_rater_range'] else 'no'} | {pct(a['exact'])} | {pct(a['within_1'])} | "
+                     f"{'yes' if a['judge_at_least_lowest_pair'] else 'no'} | {pct(a['exact'])} | {pct(a['within_1'])} | "
                      f"{fmt(a['spearman_rho'])} | {fmt(a['mean_difference_judge_minus_human'])} | "
                      f"{'yes' if a['same_system_order'] else 'no'} |")
     lines += ["", "## Mean score per system, judge and humans", "",

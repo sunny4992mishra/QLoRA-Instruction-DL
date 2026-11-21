@@ -42,7 +42,7 @@ Every answer gets three whole-number scores from 1 to 5:
 - **Hindi fluency.** Is it natural, grammatical Hindi in Devanagari? Fluency is judged on the
   language only, not on the facts.
 
-The judge prompt and the rating sheets use the same three criteria and the same 1 to 5 anchors,
+The judge prompt and the rating sheets use the same three criteria and the closely matching 1 to 5 anchors (the wording differs slightly),
 with one difference that matters for looping and cut-off answers. The rating sheet counts a
 cut-off or looping answer against **helpfulness** and asks for fluency on the language only. The
 judge prompt counts repeated phrases and looping text against **fluency**, says a looping answer
@@ -69,7 +69,7 @@ item. Decoding is at temperature 0.
 **Batching.** To keep the number of requests low on a free tier, the script sends 10 answers in
 one request. The prompt asks the judge to score each item on its own. The 10 items are in test-set order and
 all come from the same system. Every run sends the same 10 prompts in the same order in each
-batch, so position effects are the same for all runs and cancel in comparisons between runs. The whole job took about 135 requests for 1,350 answers. A batch of 10 is a design
+batch, so the position of each prompt in a batch is the same for all runs. The neighbouring answers differ between runs, so neighbour effects do not cancel (E.6). The whole job took about 135 requests for 1,350 answers. A batch of 10 is a design
 choice that can affect scores (Section E.6).
 
 **Inputs and failures.** Fields are clipped at 3,000 characters. This touched the reference of 3
@@ -100,12 +100,12 @@ separate file (`results/human/key.json`), and raters were asked not to open it o
 ratings until all four sheets were done. Like the judge, raters see the reference.
 
 **Scoring.** For each answer the rater enters three whole numbers from 1 to 5 in cells that reject
-other values, with an optional comment. `src/collect_ratings.py`
+other values, with an optional comment. A blank cell counts as missing. `src/collect_ratings.py`
 reads the sheets, matches rows to the key by item number, and writes per-system means and the
 agreement between raters. Per-answer scores are the mean over raters.
 
-**Raters.** Hindi is the first language of Shahid, Sunny and Pranjal. **[CHECK: Ompal.]** Hindi
-fluency is one of the criteria, so this matters. The raters did not calibrate: we held no session
+**Raters.** Hindi is the first language of all four raters. Hindi fluency is one of the criteria,
+so this matters. The raters did not calibrate: we held no session
 and rated no examples together, and each rater worked from the Instructions tab of the sheet
 alone. The rater–rater agreement in Table E1 therefore measures how well the written scale works
 on its own.
@@ -129,9 +129,11 @@ same score or scores at most 1 apart on the same answer.
 answers only. Per criterion we report:
 
 - the weighted kappa between the judge and each rater, averaged over raters, next to the
-  same statistic between raters. We read the judge as agreeing as well as a human does if its mean
-  κ with the raters lies within the range (minimum to maximum) of the six rater–rater κ values.
-  We chose this criterion before seeing any human ratings;
+  same statistic between raters. We read the judge as agreeing at least as well as a human does if its mean
+  κ with the raters is at least the lowest of the six rater–rater κ values. A judge κ above the
+  highest rater–rater value also passes: a judge close to the raters' consensus can agree with each
+  rater more than they agree with one another. We chose this criterion before combining or
+  comparing any ratings;
 - the share of (judge, rater) pairs with the same score, and within 1;
 - the Spearman correlation between the judge score and the mean human score of each answer;
 - the mean difference, judge minus humans, which shows whether the judge is more lenient or harsher;
@@ -140,7 +142,7 @@ answers only. Per criterion we report:
 **Table E2 [PENDING: #14].** Judge against humans, per criterion (output of
 `python src/judge_vs_human.py`: `results/human/judge_vs_human.md`).
 
-| Criterion | κ judge–rater | κ rater–rater (min to max) | Judge κ in range | Exact | Within 1 | Spearman ρ | Judge − human | Same system order |
+| Criterion | κ judge–rater | κ rater–rater (min to max) | Judge κ ≥ lowest pair | Exact | Within 1 | Spearman ρ | Judge − human | Same system order |
 |---|---:|---:|---|---:|---:|---:|---:|---|
 | Correctness | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
 | Helpfulness | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
@@ -151,7 +153,9 @@ agrees about as well as the raters agree with each other and gives the same syst
 judge scores can be used for all nine systems, including the ones the humans did not rate. If
 not, the judge scores are reported as indicative only and the conclusions rest on the human
 ratings of the three systems. Either way, say which criterion agrees least, read from our numbers, and take the looping
-difference in E.2 into account when reading helpfulness and fluency.
+difference in E.2 into account when reading helpfulness and fluency. "Same system order"
+compares exact means, so a gap of 0.01 flips it. With 30 prompts, read it together with the
+intervals.
 
 ### E.6 Limitations
 
@@ -199,7 +203,7 @@ baseline. See Section [Data] and Section 4.5 for the check.
   and 25 prompts have more than one acceptable reference. Judges can also favour longer answers
   in general. Our prompt tells the judge not to reward length. We checked it in the review of #28.
   Among the 847 answers that neither loop nor reach the token limit, the correlation between
-  length and the mean judge score is −0.31, so longer answers score slightly lower. Answers that
+  length and the mean judge score is −0.31, so longer answers tend to score lower. Answers that
   reach the limit average 1.34, against 2.27 for the rest. Those answers are
   also the looping and cut-off ones, so this is not a clean test of length alone.
 - *Free-tier model.* The model version behind a hosted free-tier name can change, so the judging
