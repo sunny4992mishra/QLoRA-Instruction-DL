@@ -1,7 +1,7 @@
 # P16 report: Introduction, Related work, Training method
 
-Draft for issue #13 (Ompal). Section numbers and cross-references to the data section (#4), the
-evaluation section (#10) and the results (#7) are placeholders until the report is assembled.
+Draft (Ompal). Section numbers and cross-references to other sections (`Section [Data]`,
+`Section [Evaluation]`, `Section [Results]`) are placeholders until the report is assembled.
 
 ---
 
@@ -40,7 +40,7 @@ Cost is measured as peak GPU memory, training time and the number of trainable p
 Our contributions are:
 
 1. A cleaned Hindi instruction split from the Aya Dataset, split by prompt so that no test
-   prompt is seen in training, with an analysis of how the Qwen2.5 tokenizer handles Hindi
+   prompt appears word for word in training (35 of 150 have a near-copy), with an analysis of how the Qwen2.5 tokenizer handles Hindi
    (Section [Data]).
 2. A reproducible QLoRA pipeline that fits on a free 16 GB T4 GPU, with eight fine-tuning runs
    that use identical settings apart from rank or data size, plus a zero-shot baseline
@@ -182,7 +182,8 @@ discussed in Section [Data].
 | Random seed | 42 |
 
 Validation loss is computed after every epoch on 61 validation rows from 50 prompts that do not
-appear in training or testing, and the adapter is saved after each epoch. We evaluate the
+appear word for word in training or testing (10 of the 50 have a near-copy in training; Section
+[Data]), and the adapter is saved after each epoch. We evaluate the
 adapter from the end of the third epoch in every run. We do not pick the epoch with the lowest
 validation loss, so that all runs are treated the same way.
 
