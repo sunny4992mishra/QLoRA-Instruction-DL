@@ -352,10 +352,11 @@ better on 12 prompts and worse on 14. The mean order is the same as the judge's 
 r16_n100, r16_n775), but the order of the two fine-tuned systems is not reliable. It reverses when
 the two prompts discussed below are left out, and one of the four raters puts r16_n100 first.
 
-**The gain in correctness is clear only for r16_n775.** It gains +0.47 ± 0.40 in correctness over
-zero-shot, while r16_n100 gains +0.20 ± 0.28. This agrees with the judge's pattern that content
-needs more data than form, but the direct difference between the two is not distinguishable from
-zero (+0.28 ± 0.48).
+**The human ratings do not show a clear correctness gain from more data.** On all 30 prompts,
+r16_n775 gains +0.47 ± 0.40 in correctness over zero-shot, and r16_n100 gains +0.20 ± 0.28. Most
+of that gap comes from two answers that r16_n775 gets fully right and the other two systems do
+not (items 2 and 9, below). Without them the gains are +0.24 ± 0.25 and +0.22 ± 0.30. So the human
+scores neither confirm nor rule out the judge's pattern that content needs more data than form.
 
 **On fluency, the raters and the judge differ.** The raters give r16_n100 the highest fluency
 (3.06, against 2.88 for r16_n775), and the judge gives r16_n775 a slightly higher score (2.67
