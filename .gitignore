@@ -22,3 +22,8 @@ venv/
 .DS_Store
 .vscode/
 .idea/
+
+# Kaggle credentials
+kaggle.json
+.kaggle/
+access_token

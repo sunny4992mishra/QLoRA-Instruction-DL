@@ -20,6 +20,7 @@ data/
   splits/test.jsonl       150 held-out prompts, never trained on
   split_stats.json        counts from each cleaning step
   tokenizer_stats.json    characters per token, lengths and truncation per tokenizer
+  test_near_duplicates.json  test and validation prompts that nearly match a training row (split unchanged)
 figures/
   token_lengths.png       token-length histogram of the training examples
 notebooks/
@@ -31,9 +32,12 @@ src/
   train.py                QLoRA fine-tuning, logs memory/time/loss to run_info.json
   generate.py             answers the test prompts, with or without an adapter
   tokenizer_stats.py      tokenizer analysis (no GPU needed)
+  find_near_duplicates.py finds test and validation prompts that nearly match a training row
   check_run.py            checks a run's committed files against the expected settings and counts
   make_rating_sheets.py   blind human rating sheets (30 prompts x 3 systems) and the answer key
+  collect_ratings.py      reads the filled rating sheets: per-system scores, agreement between raters
   judge_vs_human.py       agreement between the LLM judge and the human raters (after collect_ratings.py)
+  error_analysis.py       sorts every answer into an error category (needs only the tokenizer)
   utils.py                model/tokenizer loading, GPU memory stats
 requirements.txt
 ```
@@ -125,6 +129,6 @@ Before committing a run, check it with `python src/check_run.py <run name>`. It 
 
 The work is split across the team in [TASKS.md](TASKS.md), with one GitHub issue per task.
 
-- [ ] LLM-judge script and fixed judge prompt
-- [ ] Human rating sheet (blind, randomised order)
+- [x] LLM-judge script and fixed judge prompt
+- [x] Human rating sheet (blind, randomised order)
 - [x] Plotting and results table (`src/analyze.py`)
