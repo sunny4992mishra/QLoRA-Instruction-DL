@@ -349,8 +349,8 @@ and worse on 4.
 
 **The raters cannot separate 100 rows from 775.** The difference is +0.14 ± 0.42, and r16_n775 is
 better on 12 prompts and worse on 14. The mean order is the same as the judge's (zero-shot,
-r16_n100, r16_n775), but the order of the two fine-tuned systems is not reliable. It reverses when
-the two prompts discussed below are left out, and one of the four raters puts r16_n100 first.
+r16_n100, r16_n775), but the order of the two fine-tuned systems is not reliable. It reverses for
+every rater when the two prompts discussed below are left out.
 
 **The human ratings do not show a clear correctness gain from more data.** On all 30 prompts,
 r16_n775 gains +0.47 ± 0.40 in correctness over zero-shot, and r16_n100 gains +0.20 ± 0.28. Most
@@ -361,9 +361,10 @@ scores neither confirm nor rule out the judge's pattern that content needs more 
 **On fluency, the raters and the judge differ.** The raters give r16_n100 the highest fluency
 (3.06, against 2.88 for r16_n775), and the judge gives r16_n775 a slightly higher score (2.67
 against 2.60). The difference between the two systems is within the noise for the raters (−0.17 ±
-0.48). The rating sheet asks for fluency on the language only and counts looping against
-helpfulness, while the judge counts looping against fluency (Section [Evaluation]), which may
-contribute to this gap.
+0.48). Without items 2 and 9, the raters and the judge agree on the order (Section [Evaluation],
+Table E4). The rating sheet asks for fluency on the language only and counts looping against
+helpfulness, while the judge counts looping against fluency. Looping answers account for most of
+the judge's lower fluency level, but not for the order.
 
 **Two answers were scored differently.** Items 2 and 9 are r16_n775 answers whose correct output
 is not Hindi: an English translation and the single word "NPTEL". Two raters left their Hindi
@@ -371,8 +372,8 @@ fluency blank as not applicable, and two gave them 5. Their fluency mean therefo
 raters. Without these two answers, the fluency of r16_n775 is 2.73 instead of 2.88.
 
 **One pair of raters agrees unusually closely.** Their weighted κ is 0.96 on all three criteria,
-against 0.68 to 0.84 for the other five pairs, and they give identical scores on all three
-criteria for 66 of the 90 answers. The two raters report that they rated independently. Leaving
+against 0.68 to 0.84 for the other five pairs, and they give identical scores on 64 of the 88
+answers that both scored on all three criteria. The two raters report that they rated independently. Leaving
 out either one gives Krippendorff's α of 0.72 to 0.78 instead of 0.78 to 0.80, and does not change
 the findings above.
 
