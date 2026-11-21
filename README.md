@@ -125,16 +125,20 @@ Before committing a run, check it with `python src/check_run.py <run name>`. It 
 
 ## Reproducing the results
 
-The training outputs, judge scores and human ratings are committed, so steps 3 and 4 run without a GPU or an API key. Run everything from the repo root.
+The answers, judge scores and human ratings are committed, so steps 3 and 4 run without a GPU or an API key. The tokenizer scripts in step 3 need internet the first time, to download the tokenizers. Run everything from the repo root.
+
+`generate.py` and `judge.py` skip work that is already in their output files, so steps 1 and 2 do nothing on a fresh clone. To redo a run's answers, first move `results/<run>.jsonl` and `results/judge/<run>.jsonl` out of the way. To redo only the judging, move just the judge file.
 
 ```bash
 pip install -r requirements.txt
 
-# 1. Training and answers (T4 GPU, about 30 minutes per full-data run).
+# 1. Training and answers (T4 GPU, about 30 minutes of training per full-data run,
+#    plus answer generation).
 #    Run the Quick start commands for each setting in the experiment plan,
 #    or Section 5 of the notebook.
 
-# 2. LLM judge (optional, needs a key; a hosted model's scores can change over time)
+# 2. LLM judge (optional, needs a key; a hosted model's scores can change over time).
+#    Move the existing judge files aside first, as described above.
 export GEMINI_API_KEY=...    # never commit it
 python src/judge.py --all
 
