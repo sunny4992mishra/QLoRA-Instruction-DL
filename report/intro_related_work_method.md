@@ -9,11 +9,12 @@ evaluation section (#10) and the results (#7) are placeholders until the report 
 
 Hindi is one of the most widely spoken languages in the world, but it is a small part of the
 data that open large language models (LLMs) are trained on. Small open models, the kind that run
-on a single free GPU, often answer Hindi instructions poorly: they switch to English, repeat
-themselves, or keep going until they hit the length limit. Instruction tuning on Hindi data is
-the obvious fix. Full fine-tuning is out of reach on free hardware, even for a model with 1.5
-billion parameters, because the weights, gradients and optimizer state do not fit in 16 GB of
-GPU memory.
+on a single free GPU, often answer Hindi instructions poorly: they repeat themselves, or keep
+going until they hit the length limit. In our zero-shot baseline, 103 of 150 answers run to the
+512-token limit (Section [Results]). Instruction tuning on Hindi data is the obvious fix. Full
+fine-tuning does not fit on a single free 16 GB GPU, even for a model with 1.5 billion
+parameters. In fp32, the weights and the gradients need about 6.2 GB each and the AdamW
+optimizer state another 12.3 GB, about 25 GB before any activations are stored.
 
 QLoRA (Dettmers et al., 2023) removes most of this cost. The base model is stored in 4-bit
 precision and frozen, and only small low-rank adapter matrices are trained (Hu et al., 2022).
@@ -24,7 +25,8 @@ instruction data is scarce, so it matters how far a few hundred examples can go.
 
 This project asks: **how much Hindi instruction data and what LoRA rank is enough?** We
 fine-tune Qwen2.5-1.5B-Instruct (Qwen Team, 2024) with QLoRA on the Hindi part of the Aya
-Dataset (Singh et al., 2024), which is written by native speakers, not machine-translated. We
+Dataset (Singh et al., 2024), which was written or edited by fluent speakers rather than
+machine-translated. We
 run two sweeps on a single T4 GPU, changing one factor at a time and keeping every other setting
 fixed:
 
@@ -40,8 +42,9 @@ Our contributions are:
 1. A cleaned Hindi instruction split from the Aya Dataset, split by prompt so that no test
    prompt is seen in training, with an analysis of how the Qwen2.5 tokenizer handles Hindi
    (Section [Data]).
-2. A reproducible QLoRA pipeline that fits on a free 16 GB T4 GPU, with nine runs that use
-   identical settings apart from rank or data size (Section 3).
+2. A reproducible QLoRA pipeline that fits on a free 16 GB T4 GPU, with eight fine-tuning runs
+   that use identical settings apart from rank or data size, plus a zero-shot baseline
+   (Section 3).
 3. An evaluation of answer quality against cost along both sweeps, using an LLM judge and
    blind human ratings (Sections [Evaluation] and [Results]).
 
@@ -82,12 +85,13 @@ generated responses with gpt-3.5-turbo, and trained LoRA adapters on LLaMA and B
 al. (2024) fine-tuned on Alpaca and its machine translations with LoRA and full fine-tuning.
 Under a fixed compute budget, they found that multilingual tuning matches or beats separate
 models per language. For Hindi, Airavata (Gala et al., 2024) fine-tuned OpenHathi, a Llama 2
-7B model extended for Hindi, with LoRA on IndicInstruct, a collection of English instruction
-datasets translated into Hindi with IndicTrans2. The Aya initiative instead collected
-instruction data written by native speakers. The Aya Dataset (Singh et al., 2024) has about
-204,000 human-written prompt–completion pairs in 65 languages, and the Aya model (Üstün et
-al., 2024) was instruction-tuned on 101 languages. Our work differs from these in scale and
-focus. We use only the human-written Hindi part of the Aya Dataset (775 training rows after
+7B model extended for Hindi, on IndicInstruct, mostly English instruction datasets translated
+into Hindi with IndicTrans2. They chose LoRA over full fine-tuning after comparing the two
+(Gala et al., 2024, Section 3.1). The Aya initiative instead collected instruction data from
+fluent speakers. The Aya Dataset (Singh et al., 2024) has about 204,000 human-annotated
+prompt–completion pairs in 65 languages, and the Aya model (Üstün et al., 2024) was
+instruction-tuned on 101 languages. Our work differs from these in scale and focus. We use
+only the human-annotated Hindi part of the Aya Dataset (775 training rows after
 cleaning), a 1.5B model, and a single free GPU, and we measure how quality changes with LoRA
 rank and data size, not only the best result.
 
@@ -106,9 +110,9 @@ LoRA rank or the number of training rows changes between runs.
 ### 3.1 Base model
 
 We use **Qwen2.5-1.5B-Instruct** (Qwen Team, 2024), a decoder-only transformer with 1.54
-billion parameters and 28 layers, released under the Apache-2.0 license. It is pretrained on
-multilingual data and already instruction-tuned, mostly in English and Chinese, so it has a
-chat template and follows instructions in principle. This lets us test whether a small amount
+billion parameters and 28 layers, released under the Apache-2.0 license. It is already
+instruction-tuned and supports over 29 languages, but Hindi is not among those named in its
+model card. It has a chat template and follows instructions in principle. This lets us test whether a small amount
 of Hindi data improves an existing instruction follower in a language it handles poorly,
 instead of teaching instruction following from scratch. At 1.5B parameters, the model in 4-bit
 precision leaves enough of the T4's 16 GB of memory for training with sequences of up to 1,024
@@ -156,6 +160,9 @@ model sees exactly the same format at test time.
 The loss is computed on the **response tokens only**. Prompt tokens (system prompt, instruction
 and template markers) get the label −100 and are ignored by the cross-entropy loss. The
 response includes the end-of-turn token `<|im_end|>`, so the model also learns when to stop.
+For the 103 training rows that are cut at the length limit (see below and Section [Data]), the
+end-of-turn token is cut off as well, so these rows show no stopping point. Answers that run to
+the generation limit are a common failure in our results (Section [Results]), so this matters.
 
 Sequences are limited to **1,024 tokens**. If the prompt alone is 1,024 tokens or longer, the
 row is dropped. If the prompt fits but prompt plus response is longer, the response is cut at
@@ -186,7 +193,7 @@ This is part of what the data-size sweep measures.
 
 ### 3.6 Experiment grid
 
-**Table 2.** The nine runs. Run names follow `Qwen2.5-1.5B-Instruct_r<rank>_n<rows>`.
+**Table 2.** The zero-shot baseline and the eight fine-tuning runs. Run names follow `Qwen2.5-1.5B-Instruct_r<rank>_n<rows>`.
 
 | Run | Rank r | Training rows N | Sweep |
 |---|---|---|---|
