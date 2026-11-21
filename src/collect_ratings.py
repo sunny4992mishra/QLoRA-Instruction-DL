@@ -158,6 +158,8 @@ def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--dir", default="results/human", help="Folder with key.json and the filled sheets")
     args = p.parse_args()
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")  # the summary prints α; Windows consoles default to cp1252
 
     d = Path(args.dir)
     key = json.load(open(d / "key.json", encoding="utf-8"))
