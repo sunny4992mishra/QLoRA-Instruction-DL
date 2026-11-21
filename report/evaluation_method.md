@@ -98,14 +98,15 @@ answer, and nothing that names the system. The key that maps items to systems is
 separate file (`results/human/key.json`), and raters were asked not to open it or to compare
 ratings until all four sheets were done. All four raters confirmed on #14 that they did not
 open the key until they had finished rating. Pranjal then ran `collect_ratings.py` on his own sheet
-to check it, which loads the key, so he saw his own scores per system after he had finished. Like
-the judge, raters see the reference.
+to check it, which loads the key, so he saw his own scores per system after he had finished. All four raters
+are authors, and some had worked with aggregate results for the systems before or while rating, so
+their scores may reflect those expectations. Like the judge, raters see the reference.
 
 **Scoring.** For each answer the rater enters three whole numbers from 1 to 5 in cells that reject
 other values, with an optional comment. A blank cell counts as missing. Pranjal and Sunny left Hindi fluency blank on items 2 and 9, where
 the correct output is not Hindi (an English translation and the single word "NPTEL"), and Ompal and
-Shahid gave a fluency score on both. So fluency on those two answers comes from two raters, and
-the other 268 of 270 scores per criterion come from four. `src/collect_ratings.py`
+Shahid gave a fluency score on both. So fluency on those two answers comes from two raters. Fluency on the other 88 answers, and
+correctness and helpfulness on all 90, come from four raters. `src/collect_ratings.py`
 reads the sheets, matches rows to the key by item number, and writes per-system means and the
 agreement between raters. Per-answer scores are the mean over raters.
 
@@ -172,10 +173,10 @@ least the lowest of the six rater–rater κ values), the judge passes on all th
 margins differ.
 
 - **Correctness.** The judge agrees with the raters about as well as they agree with each other
-  (κ 0.82 against a mean of 0.80). The mean difference is −0.02, and the judge puts the three
-  systems in the same order (zero-shot, r16_n100, r16_n775) as the humans.
+  (κ 0.82 against a mean of 0.80). The mean difference is −0.02. The judge and the humans
+  put the three systems in the same order, but see the check below.
 - **Helpfulness.** The judge is a little below the rater mean (0.76 against 0.78) and well inside
-  the range. The mean difference is −0.01 and the order is the same. Its rank correlation with the
+  the range. The mean difference is −0.01. Its rank correlation with the
   mean human score is the lowest of the three (ρ = 0.64).
 - **Hindi fluency.** This agrees least. The judge's κ is 0.71 against 0.78, only just above the
   lowest rater pair (0.70). Exact agreement is 45%, and the judge scores 0.35 lower than the
@@ -185,8 +186,30 @@ margins differ.
   phrases and looping text against fluency, and the rating sheet asks for the language only
   (E.2), which could explain the lower scores. We did not test this.
 
-So the judge scores for correctness and helpfulness can be used for all nine systems, including the
-six that the humans did not rate, with the limits in E.6. For fluency, the judge and the humans
+**The order of the two fine-tuned systems depends on two answers.** Items 2 and 9 are `r16_n775`
+answers that every rater scored 5 for correctness and helpfulness (an English translation and the
+single word "NPTEL"). Without those two prompts (28 prompts), the order of the two fine-tuned
+systems no longer shows agreement on correctness or helpfulness (Table E4). What holds in every
+version is that the judge and the humans both put zero-shot lowest. We therefore do not read the
+order of r16_n100 and r16_n775 as agreement on any criterion. On fluency the order of the two
+matches in the 28-prompt version (humans 3.10 and 2.73, judge 2.57 and 2.50), so that
+disagreement in Table E2 also depends on these two answers.
+
+**Table E4.** Mean score on the 28 rated prompts without items 2 and 9, humans / judge.
+
+| System | Correctness | Helpfulness | Hindi fluency |
+|---|---:|---:|---:|
+| zero-shot | 1.47 / 1.46 | 1.42 / 1.32 | 2.19 / 1.64 |
+| r16_n100 | 1.70 / 1.68 | 1.67 / 1.75 | 3.10 / 2.57 |
+| r16_n775 | 1.71 / 1.68 | 1.74 / 1.71 | 2.73 / 2.50 |
+
+On correctness the two fine-tuned systems are nearly tied for both the humans (1.70, 1.71) and the
+judge (1.68, 1.68). On helpfulness the humans put r16_n775 higher (1.67, 1.74) and the judge puts
+r16_n100 higher (1.75, 1.71).
+
+So the judge scores for correctness and helpfulness can be used for comparisons with zero-shot and for
+all nine systems, including the six that the humans did not rate, with the limits in E.6. They
+cannot show, on this sample, which of two similar fine-tuned systems is better. For fluency, the judge and the humans
 agree that zero-shot is lowest, but the judge's level is lower than the humans' and its order of the
 two fine-tuned systems is not reliable. We therefore do not read small fluency differences between
 fine-tuned runs from the judge. Everything here rests on three systems and 30 prompts, with

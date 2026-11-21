@@ -1,0 +1,182 @@
+{
+ "raters": [
+  "Pranjal",
+  "Sunny",
+  "Shahid",
+  "Ompal"
+ ],
+ "raters_missing": [],
+ "completeness": {
+  "Pranjal": {
+   "scores_given": 268,
+   "scores_expected": 270
+  },
+  "Sunny": {
+   "scores_given": 268,
+   "scores_expected": 270
+  },
+  "Shahid": {
+   "scores_given": 270,
+   "scores_expected": 270
+  },
+  "Ompal": {
+   "scores_given": 270,
+   "scores_expected": 270
+  }
+ },
+ "systems": [
+  "Qwen2.5-1.5B-Instruct_zeroshot",
+  "Qwen2.5-1.5B-Instruct_r16_n775",
+  "Qwen2.5-1.5B-Instruct_r16_n100"
+ ],
+ "by_system": {
+  "Qwen2.5-1.5B-Instruct_zeroshot": {
+   "correctness": {
+    "mean": 1.4583333333333333,
+    "ci95": 0.22788083361595357
+   },
+   "helpfulness": {
+    "mean": 1.4083333333333334,
+    "ci95": 0.18718942605300556
+   },
+   "fluency": {
+    "mean": 2.183333333333333,
+    "ci95": 0.26469107273324183
+   },
+   "mean_of_criteria": {
+    "mean": 1.6833333333333333,
+    "ci95": 0.16453047868509768
+   }
+  },
+  "Qwen2.5-1.5B-Instruct_r16_n775": {
+   "correctness": {
+    "mean": 1.9333333333333333,
+    "ci95": 0.4854354446074432
+   },
+   "helpfulness": {
+    "mean": 1.9583333333333333,
+    "ci95": 0.472266261187414
+   },
+   "fluency": {
+    "mean": 2.8833333333333333,
+    "ci95": 0.44311222556418417
+   },
+   "mean_of_criteria": {
+    "mean": 2.2583333333333333,
+    "ci95": 0.4380138719031233
+   }
+  },
+  "Qwen2.5-1.5B-Instruct_r16_n100": {
+   "correctness": {
+    "mean": 1.6583333333333334,
+    "ci95": 0.365085876634536
+   },
+   "helpfulness": {
+    "mean": 1.6416666666666666,
+    "ci95": 0.3105111408345527
+   },
+   "fluency": {
+    "mean": 3.058333333333333,
+    "ci95": 0.41808448888561184
+   },
+   "mean_of_criteria": {
+    "mean": 2.1194444444444445,
+    "ci95": 0.30448128884638603
+   }
+  }
+ },
+ "by_rater": {
+  "Pranjal": {
+   "Qwen2.5-1.5B-Instruct_zeroshot": {
+    "correctness": 1.6666666666666667,
+    "helpfulness": 1.4333333333333333,
+    "fluency": 2.1333333333333333
+   },
+   "Qwen2.5-1.5B-Instruct_r16_n775": {
+    "correctness": 2.0,
+    "helpfulness": 1.8666666666666667,
+    "fluency": 2.6785714285714284
+   },
+   "Qwen2.5-1.5B-Instruct_r16_n100": {
+    "correctness": 1.9333333333333333,
+    "helpfulness": 1.6,
+    "fluency": 2.966666666666667
+   }
+  },
+  "Sunny": {
+   "Qwen2.5-1.5B-Instruct_zeroshot": {
+    "correctness": 1.6666666666666667,
+    "helpfulness": 1.3,
+    "fluency": 2.1333333333333333
+   },
+   "Qwen2.5-1.5B-Instruct_r16_n775": {
+    "correctness": 2.1333333333333333,
+    "helpfulness": 1.9,
+    "fluency": 2.75
+   },
+   "Qwen2.5-1.5B-Instruct_r16_n100": {
+    "correctness": 1.8666666666666667,
+    "helpfulness": 1.5666666666666667,
+    "fluency": 2.8
+   }
+  },
+  "Shahid": {
+   "Qwen2.5-1.5B-Instruct_zeroshot": {
+    "correctness": 1.2333333333333334,
+    "helpfulness": 1.2,
+    "fluency": 2.2
+   },
+   "Qwen2.5-1.5B-Instruct_r16_n775": {
+    "correctness": 1.8,
+    "helpfulness": 1.8666666666666667,
+    "fluency": 2.8333333333333335
+   },
+   "Qwen2.5-1.5B-Instruct_r16_n100": {
+    "correctness": 1.4,
+    "helpfulness": 1.6,
+    "fluency": 3.0
+   }
+  },
+  "Ompal": {
+   "Qwen2.5-1.5B-Instruct_zeroshot": {
+    "correctness": 1.2666666666666666,
+    "helpfulness": 1.7,
+    "fluency": 2.2666666666666666
+   },
+   "Qwen2.5-1.5B-Instruct_r16_n775": {
+    "correctness": 1.8,
+    "helpfulness": 2.2,
+    "fluency": 2.966666666666667
+   },
+   "Qwen2.5-1.5B-Instruct_r16_n100": {
+    "correctness": 1.4333333333333333,
+    "helpfulness": 1.8,
+    "fluency": 3.466666666666667
+   }
+  }
+ },
+ "agreement": {
+  "correctness": {
+   "krippendorff_alpha_interval": 0.8022322818615123,
+   "weighted_kappa_mean_pairwise": 0.8028630979605266,
+   "exact_agreement": 0.6962962962962963,
+   "within_1_agreement": 0.9518518518518518,
+   "rater_pairs_x_answers": 540
+  },
+  "helpfulness": {
+   "krippendorff_alpha_interval": 0.7773969569157599,
+   "weighted_kappa_mean_pairwise": 0.7750520009455979,
+   "exact_agreement": 0.6,
+   "within_1_agreement": 0.9796296296296296,
+   "rater_pairs_x_answers": 540
+  },
+  "fluency": {
+   "krippendorff_alpha_interval": 0.7799644104180412,
+   "weighted_kappa_mean_pairwise": 0.7754741250320006,
+   "exact_agreement": 0.7283018867924528,
+   "within_1_agreement": 0.9566037735849057,
+   "rater_pairs_x_answers": 530
+  }
+ },
+ "n_comments": 175
+}
