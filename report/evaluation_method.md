@@ -13,8 +13,8 @@ filled human rating sheets (#14) are marked **[PENDING]**. They are produced by
 
 ## Evaluation
 
-We judge every system on the same 150 held-out test prompts, which the models never saw in
-training. Validation loss and the form of the answers (length, cut-offs, looping; Section 4.3)
+We judge every system on the same 150 held-out test prompts. No test prompt is an exact copy of a training
+prompt, but 35 of the 150 have a near-copy in training (see E.6). Validation loss and the form of the answers (length, cut-offs, looping; Section 4.3)
 are cheap to compute but do not say whether an answer is right. For that we use two
 measurements of answer quality: an LLM judge on all 150 answers of all nine systems, and human
 ratings on a sample. Both score the same three criteria on a 1 to 5 scale.
@@ -22,7 +22,7 @@ ratings on a sample. Both score the same three criteria on a 1 to 5 scale.
 ### E.1 Test prompts and generated answers
 
 The test set has 150 prompts from the Hindi part of the Aya Dataset. The train, validation and
-test splits are made by prompt, so no test prompt appears in training (Section [Data]). 25 of the
+test splits are made by prompt, so no test prompt appears in training word for word (Section [Data]). Near-copies exist (E.6). 25 of the
 test prompts have more than one reference answer. The judge and the human raters see only the
 first reference of each prompt.
 
@@ -42,8 +42,15 @@ Every answer gets three whole-number scores from 1 to 5:
 - **Hindi fluency.** Is it natural, grammatical Hindi in Devanagari? Fluency is judged on the
   language only, not on the facts.
 
-The judge prompt and the rating sheets use the same three criteria and, in substance, the same
-scale descriptions.
+The judge prompt and the rating sheets use the same three criteria and the same 1 to 5 anchors,
+with one difference that matters for looping and cut-off answers. The rating sheet counts a
+cut-off or looping answer against **helpfulness** and asks for fluency on the language only. The
+judge prompt counts repeated phrases and looping text against **fluency**, says a looping answer
+can still be correct in its first part (correctness), and says nothing about looping under
+helpfulness. 42 of the 90 rated answers loop (the 8-word repeat rule of `answer_stats.py`), so
+this difference can lower judge–human agreement on helpfulness and fluency for reasons that are
+not about the quality of the judge (E.5). The judging was finished before this was noticed, and
+we did not change either text afterwards.
 
 ### E.3 LLM judge
 
@@ -60,8 +67,9 @@ not see which system wrote the answer. It replies with JSON only, one object of 
 item. Decoding is at temperature 0.
 
 **Batching.** To keep the number of requests low on a free tier, the script sends 10 answers in
-one request. The 10 items are scored independently, in test-set order, and all come from the same
-system. The whole job took about 135 requests for 1,350 answers. A batch of 10 is a design
+one request. The prompt asks the judge to score each item on its own. The 10 items are in test-set order and
+all come from the same system. Every run sends the same 10 prompts in the same order in each
+batch, so position effects are the same for all runs and cancel in comparisons between runs. The whole job took about 135 requests for 1,350 answers. A batch of 10 is a design
 choice that can affect scores (Section E.6).
 
 **Inputs and failures.** Fields are clipped at 3,000 characters. This touched the reference of 3
@@ -92,12 +100,15 @@ separate file (`results/human/key.json`), and raters were asked not to open it o
 ratings until all four sheets were done. Like the judge, raters see the reference.
 
 **Scoring.** For each answer the rater enters three whole numbers from 1 to 5 in cells that reject
-other values, with an optional comment. Rating takes about 2.5 hours per rater. `src/collect_ratings.py`
+other values, with an optional comment. `src/collect_ratings.py`
 reads the sheets, matches rows to the key by item number, and writes per-system means and the
 agreement between raters. Per-answer scores are the mean over raters.
 
-**[CHECK with the team: who the raters are.]** State whether each rater reads Hindi as a first or
-fluent second language, since Hindi fluency is one of the criteria. Not claimed here.
+**Raters.** Hindi is the first language of Shahid, Sunny and Pranjal. **[CHECK: Ompal.]** Hindi
+fluency is one of the criteria, so this matters. The raters did not calibrate: we held no session
+and rated no examples together, and each rater worked from the Instructions tab of the sheet
+alone. The rater–rater agreement in Table E1 therefore measures how well the written scale works
+on its own.
 
 ### E.5 Agreement
 
@@ -118,8 +129,9 @@ same score or scores at most 1 apart on the same answer.
 answers only. Per criterion we report:
 
 - the weighted kappa between the judge and each rater, averaged over raters, next to the
-  same statistic between raters. We read the judge as agreeing about as well as a human does if
-  the two numbers are close. We chose this criterion before seeing any human ratings;
+  same statistic between raters. We read the judge as agreeing as well as a human does if its mean
+  κ with the raters lies within the range (minimum to maximum) of the six rater–rater κ values.
+  We chose this criterion before seeing any human ratings;
 - the share of (judge, rater) pairs with the same score, and within 1;
 - the Spearman correlation between the judge score and the mean human score of each answer;
 - the mean difference, judge minus humans, which shows whether the judge is more lenient or harsher;
@@ -128,17 +140,18 @@ answers only. Per criterion we report:
 **Table E2 [PENDING: #14].** Judge against humans, per criterion (output of
 `python src/judge_vs_human.py`: `results/human/judge_vs_human.md`).
 
-| Criterion | κ judge–rater | κ rater–rater | Exact | Within 1 | Spearman ρ | Judge − human | Same system order |
-|---|---:|---:|---:|---:|---:|---:|---|
-| Correctness | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
-| Helpfulness | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
-| Hindi fluency | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
+| Criterion | κ judge–rater | κ rater–rater (min to max) | Judge κ in range | Exact | Within 1 | Spearman ρ | Judge − human | Same system order |
+|---|---:|---:|---|---:|---:|---:|---:|---|
+| Correctness | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
+| Helpfulness | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
+| Hindi fluency | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
 
 **[PENDING: what the agreement means for the results.]** Two outcomes to write up. If the judge
 agrees about as well as the raters agree with each other and gives the same system order, the
 judge scores can be used for all nine systems, including the ones the humans did not rate. If
 not, the judge scores are reported as indicative only and the conclusions rest on the human
-ratings of the three systems. Either way, say which criterion agrees least, read from our numbers.
+ratings of the three systems. Either way, say which criterion agrees least, read from our numbers, and take the looping
+difference in E.2 into account when reading helpfulness and fluency.
 
 ### E.6 Limitations
 
@@ -149,7 +162,8 @@ than N = 100 (Section 4.3) and one seed cannot say whether that is a property of
 chance. The data-size sweep also changes the number of training steps together with the number of
 rows (Section 3.5).
 
-**Small data and small test sets.** Training uses at most 775 rows, the Hindi part of one dataset.
+**Small data and small test sets.** Training uses at most 775 rows, drawn from the 1,016 clean Hindi rows of one dataset (the
+rest are in validation and test).
 The test set has 150 prompts. For the judge's scores this gives a 95% interval of about ±0.2 on
 the mean of one run (for example ±0.19 for the correctness of `r16_n775`). Paired over the same
 150 prompts, `r64_n775` and `r4_n775` differ in correctness by −0.01 ± 0.15, so rank effects on
@@ -157,6 +171,12 @@ the judge's scores are not distinguishable from zero. The difference between `r1
 zero-shot baseline is +0.26 ± 0.18 in correctness and +0.61 ± 0.21 in fluency. The human sample
 is 30 prompts and 3 systems, so human results exist only for those three systems and the
 intervals are wider still.
+
+**Near-duplicates between test and training.** The split is by prompt, so no prompt is shared,
+but 35 of the 150 test prompts have a near-copy in the training data, 8 of them in the human
+sample. 10 of the 50 validation prompts do too. A fine-tuned model may answer these better
+because it saw a close variant, which can flatter the fine-tuned systems against the zero-shot
+baseline. See Section [Data] and Section 4.5 for the check.
 
 **Judge bias.** An LLM judge is not a human.
 
@@ -171,9 +191,17 @@ intervals are wider still.
 - *Batching.* The judge sees 10 answers of one system in one request. A judge can compare items
   within a request, so one answer's score may depend on its neighbours. We did not test a batch
   size of 1 on the full set (we tried it for one answer only, with another model).
+- *Consistency.* The test set has 258 pairs of identical answers (43 prompts), found in the review
+  of #28. The judge gave different scores to the two copies in 45% of the pairs, and the two sets of
+  scores correlate at 0.80. This is the clearest single number for the noise in the judge, even at
+  temperature 0.
 - *Reference and length.* The judge sees one reference and may favour answers that resemble it,
   and 25 prompts have more than one acceptable reference. Judges can also favour longer answers
-  in general. Our prompt tells the judge not to reward length, but we did not measure the effect.
+  in general. Our prompt tells the judge not to reward length. We checked it in the review of #28.
+  Among the 847 answers that neither loop nor reach the token limit, the correlation between
+  length and the mean judge score is −0.31, so longer answers score slightly lower. Answers that
+  reach the limit average 1.34, against 2.27 for the rest. Those answers are
+  also the looping and cut-off ones, so this is not a clean test of length alone.
 - *Free-tier model.* The model version behind a hosted free-tier name can change, so the judging
   may not be reproducible later. The scores we used are committed, and each row records the model
   name and date.
@@ -181,8 +209,7 @@ intervals are wider still.
   open-ended prompts with a different valid answer, a correct answer may be marked down.
 
 **Human ratings.** The raters are the authors, who know the research question and may have an
-expectation about which system is better, although the sheets hide the system. Agreement depends on how each rater read the scale (Table E1). The sample is small, and the raters see the reference, which can anchor their scores. **[CHECK:
-whether the raters agreed on how to read the scale beforehand.]**
+expectation about which system is better, although the sheets hide the system. Agreement depends on how each rater read the scale (Table E1), and the raters were not calibrated (E.4). The sample is small, and the raters see the reference, which can anchor their scores.
 
 **Truncated training rows.** Training is limited to 1,024 tokens, and the Qwen2.5 tokenizer
 splits Hindi into very many tokens (1.09 characters per token on our data). 103 of 775 training

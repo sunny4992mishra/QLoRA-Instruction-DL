@@ -116,6 +116,9 @@ def main():
             "n_answers": len(keys),
             "kappa_judge_vs_rater": sum(jk) / len(jk) if jk else None,
             "kappa_rater_vs_rater": sum(rk) / len(rk) if rk else None,
+            "kappa_rater_vs_rater_min": min(rk) if rk else None,
+            "kappa_rater_vs_rater_max": max(rk) if rk else None,
+            "judge_within_rater_range": bool(jk and rk and min(rk) <= sum(jk) / len(jk) <= max(rk)),
             "exact": sum(a == b for a, b in flat) / len(flat) if flat else None,
             "within_1": sum(abs(a - b) <= 1 for a, b in flat) / len(flat) if flat else None,
             "spearman_rho": rho,
@@ -128,12 +131,13 @@ def main():
         json.dump(result, f, ensure_ascii=False, indent=1)
     pct = lambda x: "–" if x is None else f"{100 * x:.0f}%"
     lines = [f"# Judge vs human: {len(raters)} rater(s), {len(systems)} systems", "",
-             "| Criterion | Answers | κ judge–rater | κ rater–rater | Exact | Within 1 | Spearman ρ | Judge − human | Same system order |",
-             "|---|---:|---:|---:|---:|---:|---:|---:|---|"]
+             "| Criterion | Answers | κ judge–rater | κ rater–rater (min–max) | Judge κ in range | Exact | Within 1 | Spearman ρ | Judge − human | Same system order |",
+             "|---|---:|---:|---:|---|---:|---:|---:|---:|---|"]
     for c in CRITERIA:
         a = result["criteria"][c]
         lines.append(f"| {LABELS[c]} | {a['n_answers']} | {fmt(a['kappa_judge_vs_rater'])} | "
-                     f"{fmt(a['kappa_rater_vs_rater'])} | {pct(a['exact'])} | {pct(a['within_1'])} | "
+                     f"{fmt(a['kappa_rater_vs_rater'])} ({fmt(a['kappa_rater_vs_rater_min'])} to {fmt(a['kappa_rater_vs_rater_max'])}) | "
+                     f"{'yes' if a['judge_within_rater_range'] else 'no'} | {pct(a['exact'])} | {pct(a['within_1'])} | "
                      f"{fmt(a['spearman_rho'])} | {fmt(a['mean_difference_judge_minus_human'])} | "
                      f"{'yes' if a['same_system_order'] else 'no'} |")
     lines += ["", "## Mean score per system, judge and humans", "",
