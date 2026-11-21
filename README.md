@@ -36,6 +36,7 @@ src/
   check_run.py            checks a run's committed files against the expected settings and counts
   make_rating_sheets.py   blind human rating sheets (30 prompts x 3 systems) and the answer key
   collect_ratings.py      reads the filled rating sheets: per-system scores, agreement between raters
+  judge_vs_human.py       agreement between the LLM judge and the human raters (after collect_ratings.py)
   error_analysis.py       sorts every answer into an error category (needs only the tokenizer)
   utils.py                model/tokenizer loading, GPU memory stats
 requirements.txt
