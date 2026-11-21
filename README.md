@@ -33,6 +33,7 @@ src/
   tokenizer_stats.py      tokenizer analysis (no GPU needed)
   check_run.py            checks a run's committed files against the expected settings and counts
   make_rating_sheets.py   blind human rating sheets (30 prompts x 3 systems) and the answer key
+  judge_vs_human.py       agreement between the LLM judge and the human raters (after collect_ratings.py)
   utils.py                model/tokenizer loading, GPU memory stats
 requirements.txt
 ```
