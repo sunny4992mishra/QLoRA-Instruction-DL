@@ -9,7 +9,7 @@ The human ratings (#14) are still marked **[PENDING]** and are not filled with g
 
 All numbers come from `runs/*/run_info.json`, `results/*.jsonl`, `results/judge/*.jsonl` and
 `data/test_near_duplicates.json`. They are reproduced by `python src/analyze.py` (Tables R1, R2,
-R4, R5 and R6, Figures R1–R4) and `python src/answer_stats.py` (Table R3). Memory is reported in GB as PyTorch counts it, with
+R4 to R7, Figures R1–R4) and `python src/answer_stats.py` (Table R3). Memory is reported in GB as PyTorch counts it, with
 1 GB = 1024³ bytes.
 
 ---
@@ -103,7 +103,8 @@ subsets also get fewer updates, so this sweep measures data and training steps t
 Two limits apply to this subsection. We did not measure the validation loss of the base model
 without an adapter, so Table R2 compares fine-tuned runs with each other and not with zero-shot.
 And validation loss is not answer quality: it scores the probability of one reference answer
-per prompt. Section 4.4 shows that the two do not always move together.
+per prompt. Section 4.4 shows that the two do not always move together. In addition, 10 of the 50
+validation prompts have a near-copy in training (Section [Data]).
 
 ### 4.3 What the answers look like
 
@@ -207,8 +208,8 @@ assistant.
 +0.18 for N = 250 to +0.49 for r = 32. For r16_n775 the gain is largest in fluency
 (+0.61 ± 0.21), then helpfulness (+0.39 ± 0.17), and smallest in correctness (+0.26 ± 0.18). The
 judge's instructions count looping and repeated phrases against fluency, so the fluency gain
-partly reflects the drop in looping in Table R3. Section 4.5 shows that part of the
-overall gain comes from test prompts that have a near-copy in the training data.
+partly reflects the drop in looping in Table R3. Section 4.5 looks at the test prompts
+that have a near-copy in the training data.
 
 **Rank makes no measurable difference (Figure R1, left panel).** No step from one rank to the
 next, and not the whole range from r = 4 to r = 64 (+0.05 ± 0.14), is distinguishable from
@@ -223,7 +224,8 @@ sees no gain from the last 275 rows, although the validation loss still falls th
 
 **The judge does not single out N = 250.** Its mean equals that of N = 100 (−0.02 ± 0.16),
 although it loops in 71 answers against 46. Its fluency is the lowest of the fine-tuned runs
-(2.25), but not distinguishably lower than N = 100 (2.35).
+(2.25), but not distinguishably lower than N = 100 (2.35). This holds on all 150 prompts. On the
+115 without a near-copy, N = 250 scores 1.69, the same as zero-shot (1.70).
 
 **Correctness improves only with enough data.** With 500 or 775 rows the gain in correctness
 over zero-shot is +0.23 to +0.35 and excludes 0. With 100 or 250 rows it does not (+0.09 ± 0.14
@@ -256,23 +258,44 @@ excludes 0.
 | r16_n250 | 1.69 ± 0.17 | 2.19 ± 0.49 | −0.01 ± 0.16 | +0.77 ± 0.46 * |
 | r16_n500 | 1.96 ± 0.17 | 2.46 ± 0.45 | +0.26 ± 0.16 * | +1.04 ± 0.37 * |
 
-**The gain is two to four times larger on the near-duplicates.** With all 775 rows, fine-tuned
-models gain +0.73 to +0.90 over zero-shot on the 35 near-duplicate prompts and +0.20 to +0.40
-on the other 115. Zero-shot does worse on the near-duplicates than on the rest (1.42 against
-1.70), and the fine-tuned models do better (2.15 to 2.32 against 1.90 to 2.10). Part of what
-Table R4 measures is therefore memorisation of training answers, not instruction following.
+**The gain is larger on the near-duplicates, but mostly not because of memorisation.** With all
+775 rows, fine-tuned models gain +0.73 to +0.90 over zero-shot on the 35 flagged prompts and
++0.20 to +0.40 on the other 115. The data-size runs show why this gap should not be read as
+memorisation. The training subsets are nested, so each run has seen a near-copy of only some of
+the 35 (10 in the first 100 rows, 17 in the first 250, 26 in the first 500).
 
-**The gain on unseen prompts is real but smaller than the headline.** On the 115 prompts
-without a near-copy, every full-data run and N = 500 still beat zero-shot, by +0.20 to +0.40,
-against +0.35 to +0.49 on all 150 prompts. The smaller number is the fairer estimate of what
-fine-tuning does for a new instruction. For r16_n775 it is +0.33 ± 0.16, against +0.42 ± 0.15.
+**Table R7.** Gain in the judge mean over zero-shot, by whether the run's own training rows
+contain a near-copy of the test prompt. The number of prompts is in brackets. \* marks an
+interval that excludes 0.
 
-**With 100 or 250 rows there is no measurable gain on unseen prompts.** The differences from
-zero-shot are +0.14 ± 0.16 and −0.01 ± 0.16. The gain of these two runs in Table R5 comes from
-the near-duplicates. A run with N rows has seen only the near-copies that fall in its first N
-training rows: the closest training match of 6 of the 35 prompts lies in the first 100 rows,
-of 11 in the first 250 and of 22 in the first 500. For the smaller runs most of the 35 are
-therefore not near-copies of anything the run saw, and their wide intervals reflect that mix.
+| Run | Flagged, copy in its rows | Flagged, copy not in its rows | Not flagged | No copy in its rows (last two together) |
+|---|---:|---:|---:|---:|
+| r16_n100 | −0.03 ± 0.18 (10) | +0.56 ± 0.34 * (25) | +0.14 ± 0.16 (115) | +0.21 ± 0.15 * (140) |
+| r16_n250 | +0.41 ± 0.54 (17) | +1.11 ± 0.71 * (18) | −0.01 ± 0.16 (115) | +0.15 ± 0.18 (133) |
+| r16_n500 | +0.88 ± 0.37 * (26) | +1.48 ± 0.95 * (9) | +0.26 ± 0.16 * (115) | +0.35 ± 0.17 * (124) |
+
+In all three runs the gain is larger on flagged prompts whose near-copy the run **never saw** than
+on those it did. Adding a prompt's near-copy at a step of the sweep also does not raise its score
+on average (+0.07 ± 0.40 over 25 prompts). So the flagged prompts are mostly prompts where
+fine-tuning helps more anyway. Zero-shot scores them lower (1.42 against 1.70), and their
+references are shorter (median 191 against 232 characters). These groups are small and their
+intervals wide and overlapping, so this points away from memorisation as the main cause but does
+not measure its size.
+
+**Direct evidence of memorisation is small.** Across the eight runs, 19 of the 1,200 answers
+are near-verbatim copies (`difflib` similarity ≥ 0.9) of a response in the run's own training
+rows: at most 4 of 150 per run, and none for N = 100. Of the 19, 13 are on flagged prompts and 15
+get a correctness score of 5. Without its copied answers, the gain of r16_n775 on the 35 falls
+from +0.73 to +0.54. Thirteen of the 19 are only 17 or 18 characters long, so some may simply be
+a short correct answer and not a memorised one.
+
+**The 115 prompts give a conservative estimate.** They leave out prompts that are easier to
+improve, so their gain over zero-shot (+0.20 to +0.40 for the full-data runs and N = 500) is a
+lower estimate of what fine-tuning does for a new instruction, not a cleaner one.
+
+**With 100 or 250 rows the gain is small and borderline.** N = 100 gains +0.14 ± 0.16 on the 115
+prompts and +0.21 ± 0.15 on the 140 with no near-copy in its own rows. N = 250 gains −0.01 ± 0.16
+and +0.15 ± 0.18. With 500 rows the gain is clear on both (+0.26 ± 0.16 and +0.35 ± 0.17).
 
 **The findings on rank and data size hold on the 115 prompts.** No difference between ranks is
 distinguishable from zero (r = 64 against r = 4 is +0.06 ± 0.16), and the one clear step in
@@ -314,9 +337,10 @@ it costs training time, not memory: 21 minutes for 500 rows against 4 for 100.
 We asked how much Hindi instruction data and what LoRA rank is enough to make a 1.5B model
 follow Hindi instructions on a free GPU.
 
-**The answer from our runs:** about 500 training rows and the lowest rank we tried, r = 4. With
-100 or 250 rows the judge sees no gain on test prompts that have no near-copy in training; with
-more than 500 rows or a higher rank it sees no further gain. "Enough" here means enough to get
+**The answer from our runs:** about 500 training rows (at r = 16), and no rank above r = 4 (at
+775 rows). We did not run r = 4 with 500 rows. With 100 rows the gain is small and borderline
+(+0.14 ± 0.16 on the 115 prompts with no near-copy, +0.21 ± 0.15 on the 140 with no near-copy in
+its own rows); with more than 500 rows or a higher rank the judge sees no further gain. "Enough" here means enough to get
 what this setup can give. It does not mean good: the best system averages about 2 out of 5 from
 the judge.
 
@@ -336,10 +360,9 @@ the judge.
    stays below 2 out of 5.
 5. **Loss and form are not quality.** Validation loss falls steadily with rank and with the
    last 275 rows, and looping falls with rank, but the judge scores do not follow either.
-6. **Part of the measured gain is memorisation.** 35 of the 150 test prompts have a near-copy
-   in training. With all 775 rows, fine-tuned models gain +0.7 to +0.9 on those and +0.2 to
-   +0.4 on the other 115, so the gain on a new instruction is smaller than all 150 prompts
-   suggest.
+6. **Memorisation is small.** A few answers copy a training response almost word for word (at
+   most 4 of 150 per run), and most of them get correctness 5. The larger gain on the 35
+   near-duplicate prompts mostly reflects the kind of prompt, not memorisation.
 
 **[PENDING: human ratings.]** Whether the four raters rank zero-shot, r16_n100 and r16_n775 in
 the same order as the judge, in one or two sentences.

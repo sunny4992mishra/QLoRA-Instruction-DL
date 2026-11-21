@@ -275,7 +275,7 @@ def sort_key(r):
     return (not r["zeroshot"], r["rank"] or 0, r["train_rows"] or 0, r["run"])
 
 
-def write_tables(table, results_dir, flagged=None):
+def write_tables(table, results_dir, flagged=None, first_row=None):
     table = sorted(table, key=sort_key)
     with open(results_dir / "summary.csv", "w", newline="", encoding="utf-8") as f:
         keys = [k for k, _, _ in COLUMNS] + [c + "_ci" for c in CRITERIA] + ["judge_mean_ci", "gpu"]
@@ -345,6 +345,23 @@ def write_tables(table, results_dir, flagged=None):
                      "(paired difference in the judge mean, A − B):\n\n| A − B | Without near-duplicates |\n|---|---:|\n")
             for a, b in sweep:
                 note += f"| {short(a['run'])} − {short(b['run'])} | {pm(*paired_difference(a, b, ids=rest)[:2], star=True)} |\n"
+        if first_row and zs is not None:
+            note += ("\n## Near-copy in the run's own training rows\n\n"
+                     "Training subsets are nested, so each data-size run has seen only some near-copies. "
+                     "Gain in the judge mean over zero-shot, by whether the run's first N rows contain a "
+                     "near-copy of the test prompt (`first_train_row`). Number of prompts in brackets.\n\n"
+                     "| Run | Flagged, copy in its rows | Flagged, copy not in its rows | Not flagged | "
+                     "No copy in its rows (last two together) |\n|---|---:|---:|---:|---:|\n")
+            for r in sorted((x for x in judged if not x["zeroshot"] and x["rank"] == SWEEP_RANK
+                             and x["train_rows"] < FULL_N), key=lambda x: x["train_rows"]):
+                seen = {i for i, f in first_row.items() if f < r["train_rows"]}
+                unseen = flagged - seen
+                groups = (seen, unseen, rest, unseen | rest)
+                cells = []
+                for ids in groups:
+                    mu, ci, n = paired_difference(r, zs, ids=ids)
+                    cells.append(f"{pm(mu, ci, star=True)} ({n})")
+                note += f"| {short(r['run'])} | " + " | ".join(cells) + " |\n"
     (results_dir / "summary.md").write_text("\n".join(lines) + "\n" + note, encoding="utf-8")
 
 
@@ -541,8 +558,10 @@ def main():
     zs = next((r for r in table if r["zeroshot"]), None)
     trained = [r for r in table if not r["zeroshot"] and r["rank"] is not None]
     nd_path = Path(args.near_duplicates)
-    flagged = set(json.loads(nd_path.read_text(encoding="utf-8"))["ids"]) if nd_path.exists() else None
-    write_tables(table, results_dir, flagged)
+    near = json.loads(nd_path.read_text(encoding="utf-8")) if nd_path.exists() else None
+    flagged = set(near["ids"]) if near else None
+    first_row = {q["id"]: q["first_train_row"] for q in near["pairs"] if "first_train_row" in q} if near else None
+    write_tables(table, results_dir, flagged, first_row)
     sweep_figure([r for r in trained if r["train_rows"] == FULL_N], zs, "rank", "LoRA rank r",
                  f"Rank sweep (all {FULL_N} training rows)", fig_dir / "quality_vs_rank.png", log2=True)
     sweep_figure([r for r in trained if r["rank"] == SWEEP_RANK], zs, "train_rows", "Training rows N",

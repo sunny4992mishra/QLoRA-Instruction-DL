@@ -14,56 +14,64 @@
       "median_tokens": 197.0,
       "at_limit": 46,
       "looping": 43,
-      "mostly_devanagari": 147
+      "mostly_devanagari": 147,
+      "copied_train": 2
     },
     "Qwen2.5-1.5B-Instruct_r8_n775": {
       "answers": 150,
       "median_tokens": 225.0,
       "at_limit": 47,
       "looping": 36,
-      "mostly_devanagari": 148
+      "mostly_devanagari": 148,
+      "copied_train": 2
     },
     "Qwen2.5-1.5B-Instruct_r16_n100": {
       "answers": 150,
       "median_tokens": 224.5,
       "at_limit": 41,
       "looping": 46,
-      "mostly_devanagari": 148
+      "mostly_devanagari": 148,
+      "copied_train": 0
     },
     "Qwen2.5-1.5B-Instruct_r16_n250": {
       "answers": 150,
       "median_tokens": 417.0,
       "at_limit": 70,
       "looping": 71,
-      "mostly_devanagari": 147
+      "mostly_devanagari": 147,
+      "copied_train": 1
     },
     "Qwen2.5-1.5B-Instruct_r16_n500": {
       "answers": 150,
       "median_tokens": 178.5,
       "at_limit": 32,
       "looping": 28,
-      "mostly_devanagari": 148
+      "mostly_devanagari": 148,
+      "copied_train": 2
     },
     "Qwen2.5-1.5B-Instruct_r16_n775": {
       "answers": 150,
       "median_tokens": 187.0,
       "at_limit": 49,
       "looping": 35,
-      "mostly_devanagari": 148
+      "mostly_devanagari": 148,
+      "copied_train": 4
     },
     "Qwen2.5-1.5B-Instruct_r32_n775": {
       "answers": 150,
       "median_tokens": 192.5,
       "at_limit": 40,
       "looping": 30,
-      "mostly_devanagari": 148
+      "mostly_devanagari": 148,
+      "copied_train": 4
     },
     "Qwen2.5-1.5B-Instruct_r64_n775": {
       "answers": 150,
       "median_tokens": 194.5,
       "at_limit": 34,
       "looping": 15,
-      "mostly_devanagari": 147
+      "mostly_devanagari": 147,
+      "copied_train": 4
     }
   },
   "reference": {

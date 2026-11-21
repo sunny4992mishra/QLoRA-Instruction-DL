@@ -65,3 +65,13 @@ Steps along the sweeps on the prompts without a near-copy in training (paired di
 | r16_n500 − r16_n250 | +0.27 ± 0.15 * |
 | r16_n775 − r16_n500 | +0.07 ± 0.17 |
 | r16_n775 − r16_n100 | +0.19 ± 0.19 |
+
+## Near-copy in the run's own training rows
+
+Training subsets are nested, so each data-size run has seen only some near-copies. Gain in the judge mean over zero-shot, by whether the run's first N rows contain a near-copy of the test prompt (`first_train_row`). Number of prompts in brackets.
+
+| Run | Flagged, copy in its rows | Flagged, copy not in its rows | Not flagged | No copy in its rows (last two together) |
+|---|---:|---:|---:|---:|
+| r16_n100 | -0.03 ± 0.18 (10) | +0.56 ± 0.34 * (25) | +0.14 ± 0.16 (115) | +0.21 ± 0.15 * (140) |
+| r16_n250 | +0.41 ± 0.54 (17) | +1.11 ± 0.71 * (18) | -0.01 ± 0.16 (115) | +0.15 ± 0.18 (133) |
+| r16_n500 | +0.88 ± 0.37 * (26) | +1.48 ± 0.95 * (9) | +0.26 ± 0.16 * (115) | +0.35 ± 0.17 * (124) |

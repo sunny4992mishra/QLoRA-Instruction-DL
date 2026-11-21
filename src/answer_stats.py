@@ -9,6 +9,9 @@ For every results/<run>.jsonl it reports, over the 150 answers:
   at_limit          answers that ran to the generation limit of 512 new tokens
   looping           answers that repeat the same 8-word phrase 3 or more times
   mostly_devanagari answers in which more than half of the letters are Devanagari
+  copied_train      answers with difflib similarity >= 0.9 to a response in the run's own
+                    training rows (fine-tuned runs only). Many are very short, so a match can
+                    also be a short correct answer and not memorisation
 
 "At the limit" is counted as 510 tokens or more. generate.py stores the decoded, stripped
 text, and tokenizing that text again can give one or two tokens fewer than were generated.
@@ -19,7 +22,9 @@ Output: results/answer_stats.json, and a Markdown table on stdout.
 
 import argparse
 import collections
+import difflib
 import json
+import re
 import statistics
 from pathlib import Path
 
@@ -54,6 +59,17 @@ def stats(texts, tok, limit):
     }
 
 
+def copied(texts, pool, threshold=0.9):
+    """Number of texts that nearly equal some training response."""
+    def hit(text):
+        for other in pool:
+            sm = difflib.SequenceMatcher(None, text, other, autojunk=False)
+            if sm.real_quick_ratio() >= threshold and sm.quick_ratio() >= threshold and sm.ratio() >= threshold:
+                return True
+        return False
+    return sum(hit(t.strip()) for t in texts)
+
+
 def sort_key(name):
     # zero-shot first, then by rank, then by training rows
     if name.endswith("_zeroshot"):
@@ -67,15 +83,21 @@ def main():
     p.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct", help="Tokenizer used for the token counts")
     p.add_argument("--results-dir", default="results")
     p.add_argument("--test-file", default="data/splits/test.jsonl")
+    p.add_argument("--train-file", default="data/splits/train.jsonl")
     p.add_argument("--max-new-tokens", type=int, default=512, help="The limit used in generate.py")
     p.add_argument("--out", default="results/answer_stats.json")
     args = p.parse_args()
 
     tok = AutoTokenizer.from_pretrained(args.model)
+    train = load_jsonl(args.train_file)
     out = {"tokenizer": args.model, "max_new_tokens": args.max_new_tokens, "runs": {}}
     out["reference"] = stats([r["reference"] for r in load_jsonl(args.test_file)], tok, args.max_new_tokens)
     for path in sorted(Path(args.results_dir).glob("*.jsonl"), key=lambda q: sort_key(q.stem)):
-        out["runs"][path.stem] = stats([r["output"] for r in load_jsonl(path)], tok, args.max_new_tokens)
+        texts = [r["output"] for r in load_jsonl(path)]
+        out["runs"][path.stem] = stats(texts, tok, args.max_new_tokens)
+        m = re.search(r"_r\d+_n(\d+)$", path.stem)
+        if m:
+            out["runs"][path.stem]["copied_train"] = copied(texts, [r["response"] for r in train[: int(m.group(1))]])
 
     Path(args.out).write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8")
     print("| Run | Median tokens | At the limit | Looping | Mostly Devanagari |\n|---|---:|---:|---:|---:|")
