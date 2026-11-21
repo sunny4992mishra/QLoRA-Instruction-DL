@@ -17,9 +17,11 @@ We gave each of the 1,350 answers (nine systems × 150 test prompts) one categor
 
 Categories 1, 2 and 4 use only the answer text. We count the tokens of each answer again with the Qwen2.5 tokenizer. An answer that has 510 or more tokens "reaches the limit". Every answer has either 510 or more tokens or 504 or fewer. The ones near 504 end on a complete sentence, so they stopped on their own. The other categories depend on the LLM judge's scores (#9), so they carry its errors.
 
+The order of the rules matters in two places. First, "Correct enough" is not the same as judge correctness 3 or more. A looping answer counts as a loop even when the judge accepts its start: 4 zero-shot answers, and 1 each for r = 4 and r = 8, have judge correctness 3 or more but are counted as loops. Second, rule 3 comes before rule 4, so the 5 "Correct enough" answers that reach the limit are not counted as cut off.
+
 ## Results
 
-**Table E1.** Answers per category, out of 150 per system.
+**Table X1.** Answers per category, out of 150 per system.
 
 | Category | Zero-shot | r=4 | r=8 | r=16 | r=32 | r=64 | N=100 | N=250 | N=500 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -34,20 +36,20 @@ Categories 1, 2 and 4 use only the answer text. We count the tokens of each answ
 
 The rank columns use all 775 training rows. The N columns use r = 16, and the r=16 column is also the N=775 point of the data-size sweep.
 
-**Not stopping is the main failure of the base model.** 103 of the 150 zero-shot answers run to the 512-token limit, and 79 of them repeat a phrase until they are cut off. Fine-tuning roughly halves this: 32 to 70 answers reach the limit, depending on the run. Reaching the limit is not always a mistake, because 26 of the 150 references are themselves longer than 512 tokens. But in every system, most of the answers that reach the limit are on prompts with shorter references (for zero-shot, 80 of 103).
+**Not stopping is the main failure of the base model.** 103 of the 150 zero-shot answers run to the 512-token limit, and 79 of them repeat a phrase until they are cut off. Fine-tuning roughly halves this in every run except N=250: 32 to 49 answers reach the limit, against 70 for N=250. Reaching the limit is not always a mistake, because 26 of the 150 references are themselves longer than 512 tokens. But in every system, most of the answers that reach the limit are on prompts with shorter references (for zero-shot, 80 of 103).
 
-- **Rank.** Looping falls steadily as rank grows: 38, 31, 31, 27 and 14 answers for r = 4 to 64.
+- **Rank.** Looping is about the same from r = 4 to r = 16 and lower at r = 32 and r = 64: 38, 31, 31, 27 and 14 answers for r = 4 to 64. The drop at r = 32 and r = 64 holds at every phrase length we tried. With a 5-word phrase instead of 8, the counts are 40, 41, 37, 30 and 18.
 - **Data size.** Looping does not fall steadily. N=250 loops on 64 answers, almost as many as zero-shot, while N=500 loops on only 22. With a single seed per setting, we can't tell whether N=250 is a real effect or run-to-run variation.
 
 **English answers are rare.** Only two zero-shot answers and at most one answer per fine-tuned run are mostly in English. The base model already answers Hindi prompts in Hindi, so this failure barely matters on our test set.
 
-**Fine-tuning trades loops for short, confident nonsense.** Fine-tuning shortens the answers. The median answer drops from 541 characters to between 192 and 239 characters in every fine-tuned run except N=250, which is at 436 (`results/summary.md`). That matches the mostly short references in the Aya data. But many of the short answers make little sense. 9 zero-shot answers fall into the incoherent category, against 29 to 56 for every fine-tuned run. The zero-shot count is low partly because most of its failures are already counted as loops. Rank shows the same trade-off: r = 64 has the fewest loops (14) but the most incoherent answers (55). So a higher rank removes loops without making the answers correct.
+**Fine-tuning trades loops for short answers the judge scores as incoherent.** Fine-tuning shortens the answers. The median answer drops from 541 characters to between 192 and 239 characters in every fine-tuned run except N=250, which is at 436 (`results/summary.md`). That matches the mostly short references in the Aya data. But many of the short answers make little sense. 9 zero-shot answers fall into the incoherent category, against 29 to 56 for every fine-tuned run. The zero-shot count is low partly because most of its failures are already counted as loops. Rank shows the same trade-off: r = 64 has the fewest loops (14) but the most incoherent answers (55). So a higher rank removes loops without making the answers correct. The judge's fluency score decides this category, and the judge also counts repeated phrases against fluency. The human comments on the rated answers (#14) will test it once all four sheets are in.
 
 **Wrong facts stated fluently** make up 9 to 14 answers in every system, and fine-tuning does not reduce them. These answers read well, which makes them the most misleading kind of error for a user.
 
-**Restating the question** is rare, at 1 to 3 answers per system.
+**Restating the question** is rare as an error, at 1 to 3 answers per system. More answers meet the copy rule, 4 to 10 per system, but 54 of these 73 answers fall under an earlier rule. Most of them (40) the judge scores as correct enough, so repeating the question's words is often part of a correct answer rather than an error.
 
-**Most answers are still wrong.** Even the best system (r = 32) gets correctness 3 or more on only 31 of 150 answers, against 13 for zero-shot.
+**Most answers are still wrong.** Even the best system (r = 32) gets judge correctness 3 or more on only 31 of 150 answers, against 17 for zero-shot.
 
 ## Examples
 
@@ -65,6 +67,7 @@ The examples come only from test prompts that are not in the human-rating sample
 ## Limitations of this analysis
 
 - Categories 3 and 5–8 depend on the LLM judge, and the judge makes mistakes. It gives fluency 5 to an answer that is only the emoji "😊". It also gives helpfulness 5 to the wrong Delaware answer.
-- The thresholds (8-word phrase, 3 repeats, 50% and 60% 3-gram overlap) were picked by reading answers, not tuned. Changing them moves a few answers between neighbouring categories. The overall pattern stays the same: zero-shot answers mostly loop, while fine-tuned answers tend to be short but incoherent or wrong.
+- The judge is not consistent with itself. When two systems gave the identical answer, it scored 45% of the 258 pairs differently (correlation 0.80; Section [Evaluation], E.6). Categories 3 and 5–8 depend on these scores, so counts that differ by a few answers between neighbouring runs, such as 29, 33 and 36 incoherent answers, are not reliable differences.
+- The thresholds (8-word phrase, 3 repeats, 50% and 60% 3-gram overlap) were picked by reading answers, not tuned. The loop counts depend on the phrase length. With a 5-word phrase instead of 8, zero-shot goes from 79 to 95 looping answers and r = 8 from 31 to 41. Only a sample of the extra matches was read, so not all of them are necessarily true loops. The overall pattern holds at 5, 6 and 8 words: zero-shot answers mostly loop, r = 64 loops least, and fine-tuned answers tend to be short but incoherent or wrong.
 - Every setting was run once with seed 42. Differences of a few answers between two runs, such as r = 8 against r = 16, are within what a second seed could change.
 - Once all four raters have finished (#14), the human comments on the 90 rated answers can be used to check these categories against human judgment.

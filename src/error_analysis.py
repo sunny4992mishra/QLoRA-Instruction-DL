@@ -19,9 +19,10 @@ one category: the first rule below that matches.
     weak           correctness <= 2 otherwise: vague or only partly right
 
 not_hindi, loops and the cut_off test use only the text. A loop counts as an error even when
-the judge accepts the start of the answer; a cut-off answer the judge accepts counts as ok.
-A wrong answer that restates the question ("In 2001, X took charge as ...") is wrong_fluent,
-not copies_prompt, because the rule for fluent answers comes first. An answer "reaches
+the judge accepts the start of the answer, so "ok" is not the same as judge correctness >= 3;
+a cut-off answer the judge accepts counts as ok. A wrong answer that restates the question
+but has judge fluency >= 4 is wrong_fluent, not copies_prompt, because the rule for fluent
+answers comes first. An answer "reaches
 the limit" if re-tokenizing it gives at least 510 tokens: no answer stops between 505 and 509,
 and the ones below 505 all end on a complete sentence. A cut-off answer is not always a
 mistake, because some references are longer than 512 tokens too; the summary counts those.
@@ -60,7 +61,7 @@ LABELS = {
     "wrong_fluent": "Fluent but wrong",
     "incoherent": "Incoherent Hindi",
     "weak": "Vague or partly right",
-    "ok": "Correct enough (judge >= 3)",
+    "ok": "Correct enough (judge >= 3, not looping)",
 }
 
 EXAMPLE_RUNS = [f"Qwen2.5-1.5B-Instruct_{s}" for s in ("r16_n775", "zeroshot", "r16_n100")]
@@ -196,7 +197,7 @@ def write_outputs(answers, out_dir, rated_ids):
     fields = ["run", "id", "category", "tokens", "ref_tokens", "hits_limit", "max_repeat",
               "copy_share", "instruction_covered", "devanagari_share", "correctness", "helpfulness", "fluency"]
     with open(out_dir / "answers.csv", "w", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
+        w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore", lineterminator="\n")
         w.writeheader()
         w.writerows(answers)
 
@@ -224,6 +225,8 @@ def write_outputs(answers, out_dir, rated_ids):
                  lambda a: a["devanagari_share"] < 0.5 and a["latin_words"] >= 3),
         flag_row("Judge correctness <= 2",
                  lambda a: a["correctness"] is not None and a["correctness"] <= 2),
+        flag_row("Judge correctness >= 3",
+                 lambda a: a["correctness"] is not None and a["correctness"] >= 3),
     ]
 
     header = ["Category"] + [short(r) for r in runs]

@@ -13,7 +13,7 @@ Written by `src/error_analysis.py`. Each answer gets one category; the rules and
 | Copies the instruction | 3 | 1 | 3 | 3 | 1 | 2 | 2 | 2 | 2 |
 | Incoherent Hindi | 9 | 44 | 29 | 36 | 45 | 55 | 56 | 33 | 43 |
 | Vague or partly right | 13 | 28 | 35 | 25 | 21 | 21 | 21 | 12 | 34 |
-| Correct enough (judge >= 3) | 13 | 23 | 24 | 27 | 31 | 24 | 19 | 23 | 25 |
+| Correct enough (judge >= 3, not looping) | 13 | 23 | 24 | 27 | 31 | 24 | 19 | 23 | 25 |
 | Answers | 150 | 150 | 150 | 150 | 150 | 150 | 150 | 150 | 150 |
 
 ## Flags (an answer can have several)
@@ -26,5 +26,6 @@ Written by `src/error_analysis.py`. Each answer gets one category; the rules and
 | Copies the instruction (both 3-gram shares) | 4 | 9 | 10 | 8 | 8 | 6 | 8 | 10 | 10 |
 | Under half of the letters Devanagari, 3+ Latin words | 3 | 1 | 1 | 1 | 1 | 2 | 2 | 1 | 1 |
 | Judge correctness <= 2 | 133 | 126 | 125 | 123 | 119 | 126 | 131 | 127 | 125 |
+| Judge correctness >= 3 | 17 | 24 | 25 | 27 | 31 | 24 | 19 | 23 | 25 |
 
 References over 512 tokens: 26 of 150 test prompts.
