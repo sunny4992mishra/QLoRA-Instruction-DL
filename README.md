@@ -27,6 +27,7 @@ notebooks/
   p16_qlora_hindi.ipynb   Colab/Kaggle notebook: baseline, training, generation, grid
 src/
   analyze.py              results table and plots from runs/ and results/ (no GPU needed)
+  answer_stats.py         answer length, cut-offs at the token limit and looping per system (no GPU needed)
   prepare_data.py         builds the split from the Aya Dataset (already run)
   prompts.py              chat-template formatting shared by training and generation
   train.py                QLoRA fine-tuning, logs memory/time/loss to run_info.json
