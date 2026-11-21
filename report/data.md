@@ -89,7 +89,7 @@ reference 215.5.
 
 The tasks are mixed: factual questions, Hindi grammar exercises, riddles, multiple choice,
 fill-in-the-blank, short stories, letters and essays. Many answers are very short. 102 of the 775
-training responses are under 50 characters, and 50 begin with "उत्तर:" ("Answer:"), a format
+training responses are under 50 characters, and 42 begin with "उत्तर:" ("Answer:"), a format
 the fine-tuned models pick up (Section [Results]). Some open-ended prompts get a one-sentence
 answer. "एक स्वच्छता अभियान की कहानी।" ("A story of a cleanliness campaign.") is answered with a
 single sentence that summarises the campaign.
@@ -149,19 +149,38 @@ rephrase a prompt in small ways: a prefix such as "इस प्रश्न क
 question:"), different punctuation, or a spelling variant such as पडती for पड़ती. So a near-copy of
 a test example can be in the training split. `src/find_near_duplicates.py` flags a test prompt
 when its prompt has character 4-gram Jaccard similarity of at least 0.8 with a training prompt,
-or its reference has a `difflib` similarity of at least 0.9 with a training response.
+or one of its references has a `difflib` similarity of at least 0.9 with a training response.
 
 - **24** of the 150 test prompts have a near-identical training prompt. For example, the test
   prompt "इस प्रश्न का उत्तर दें: प्रश्न: भारत की सबसे ऊची पर्वतश्रेणी कौन सी है?" is in training
   without its first word.
-- **28** have a reference answer that is nearly identical to a training response.
+- **28** have a reference answer that is nearly identical to a training response. All of them
+  match on their first reference; checking the other references adds none.
 - **17** are flagged both ways, so **35** test prompts (23%) are flagged in total.
 
+Most flagged pairs are clear near-copies. A few share a topic but ask something different, so 35
+is a slightly generous count. For example, two SWAYAM PRABHA prompts ask about different channels
+but have nearly the same reference. The check also misses one kind of overlap: one test prompt
+that is not flagged quotes a training response word for word as its passage, because the check
+compares prompts with prompts and references with responses.
+
 We did not change the split, because all runs already use it, and changing it would make them
-incomparable. The 35 flagged ids are listed in `data/test_near_duplicates.json`. They can be left
-out of the scores as a check: if fine-tuned models score higher on these prompts than on the
-rest, part of their gain is memorisation and not instruction following. The human rating sample
-includes 8 of the 35 (6 flagged by their reference).
+incomparable. The 35 flagged ids are listed in `data/test_near_duplicates.json`, so they can be
+left out of the scores as a check. A higher score on the flagged prompts than on the rest does
+not by itself show memorisation, because the flagged prompts may also differ from the rest in
+kind. Comparing runs that have and have not seen a near-copy, on the same prompts, separates the
+two (Section [Results]). The human rating sample includes 8 of the 35 (6 flagged by their
+reference).
+
+Two consequences follow for the other sections.
+
+- **The data-size sweep adds near-copies along with data.** The training subsets are nested, so a
+  larger subset contains more of the 35 near-copies. For 10 of the 35, a near-copy is in the
+  first 100 training rows; for 17 in the first 250, 26 in the first 500, and all 35 at 775. The
+  field `first_train_row` in the JSON file gives, for each flagged prompt, the position of its
+  earliest near-copy in the training order, so it shows which subsets contain one.
+- **Validation loss is affected too.** The same check flags 10 of the 50 validation prompts (10 of
+  the 61 validation rows): 5 by prompt and 8 by response.
 
 ---
 
