@@ -4,10 +4,9 @@ Draft for issue #10 (Shahid). Section, table and figure numbers are placeholders
 is assembled; tables here are numbered E1, E2, … Cross-references to other sections are marked
 like `Section [Data]`, and to results tables as in `report/results_conclusion.md` (R1, R2, …).
 
-**Status.** The judge setup, the human rating setup and the limitations are written, and every
-number in them comes from files on `main` or from PR #28 (judge scores). The parts that need the
-filled human rating sheets (#14) are marked **[PENDING]**. They are produced by
-`python src/collect_ratings.py` and `python src/judge_vs_human.py`, and are not filled with guesses.
+**Status.** Complete. Every number comes from files on `main`. Tables E1 to E3 are the outputs of
+`python src/collect_ratings.py` and `python src/judge_vs_human.py`, run on the four filled rating
+sheets (#14).
 
 ---
 
@@ -42,7 +41,7 @@ Every answer gets three whole-number scores from 1 to 5:
 - **Hindi fluency.** Is it natural, grammatical Hindi in Devanagari? Fluency is judged on the
   language only, not on the facts.
 
-The judge prompt and the rating sheets use the same three criteria and the closely matching 1 to 5 anchors (the wording differs slightly),
+The judge prompt and the rating sheets use the same three criteria and closely matching 1 to 5 anchors (the wording differs slightly),
 with one difference that matters for looping and cut-off answers. The rating sheet counts a
 cut-off or looping answer against **helpfulness** and asks for fluency on the language only. The
 judge prompt counts repeated phrases and looping text against **fluency**, says a looping answer
@@ -97,10 +96,16 @@ the default setting and the smallest data size. They do not cover the rank sweep
 an Excel sheet. The sheet shows the item number, the instruction, the reference answer and the
 answer, and nothing that names the system. The key that maps items to systems is kept in a
 separate file (`results/human/key.json`), and raters were asked not to open it or to compare
-ratings until all four sheets were done. Like the judge, raters see the reference.
+ratings until all four sheets were done. All four raters confirmed on #14 that they did not
+open the key until they had finished rating. Pranjal then ran `collect_ratings.py` on his own sheet
+to check it, which loads the key, so he saw his own scores per system after he had finished. Like
+the judge, raters see the reference.
 
 **Scoring.** For each answer the rater enters three whole numbers from 1 to 5 in cells that reject
-other values, with an optional comment. A blank cell counts as missing. `src/collect_ratings.py`
+other values, with an optional comment. A blank cell counts as missing. Pranjal and Sunny left Hindi fluency blank on items 2 and 9, where
+the correct output is not Hindi (an English translation and the single word "NPTEL"), and Ompal and
+Shahid gave a fluency score on both. So fluency on those two answers comes from two raters, and
+the other 268 of 270 scores per criterion come from four. `src/collect_ratings.py`
 reads the sheets, matches rows to the key by item number, and writes per-system means and the
 agreement between raters. Per-answer scores are the mean over raters.
 
@@ -116,14 +121,20 @@ on its own.
 the mean pairwise weighted kappa (quadratic weights), and the share of rater pairs that give the
 same score or scores at most 1 apart on the same answer.
 
-**Table E1 [PENDING: #14].** Agreement between the four raters, per criterion (output of
+**Table E1.** Agreement between the four raters, per criterion (output of
 `python src/collect_ratings.py`: `results/human/summary.md`).
 
 | Criterion | Krippendorff's α | Weighted κ (mean over pairs) | Exact | Within 1 |
 |---|---:|---:|---:|---:|
-| Correctness | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
-| Helpfulness | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
-| Hindi fluency | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
+| Correctness | 0.80 | 0.80 | 70% | 95% |
+| Helpfulness | 0.78 | 0.78 | 60% | 98% |
+| Hindi fluency | 0.78 | 0.78 | 73% | 96% |
+
+The raters agree well on all three criteria, although they worked from the written scale alone.
+The pairwise κ values range from 0.68 to 0.96. One pair of raters has κ = 0.96 on all three
+criteria (89 to 90% exact), and the other five pairs have κ between 0.68 and 0.84. The mean over
+pairs is therefore higher than most pairs: without the highest pair it is 0.77 for correctness and 0.74
+for helpfulness and for fluency.
 
 **Between the judge and the humans.** The judge and the humans are compared on the 90 rated
 answers only. Per criterion we report:
@@ -139,23 +150,47 @@ answers only. Per criterion we report:
 - the mean difference, judge minus humans, which shows whether the judge is more lenient or harsher;
 - whether the judge and the humans put the three systems in the same order.
 
-**Table E2 [PENDING: #14].** Judge against humans, per criterion (output of
+**Table E2.** Judge against humans, per criterion (output of
 `python src/judge_vs_human.py`: `results/human/judge_vs_human.md`).
 
 | Criterion | κ judge–rater | κ rater–rater (min to max) | Judge κ ≥ lowest pair | Exact | Within 1 | Spearman ρ | Judge − human | Same system order |
 |---|---:|---:|---|---:|---:|---:|---:|---|
-| Correctness | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
-| Helpfulness | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
-| Hindi fluency | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
+| Correctness | 0.82 | 0.80 (0.71 to 0.96) | yes | 71% | 96% | 0.73 | −0.02 | yes |
+| Helpfulness | 0.76 | 0.78 (0.68 to 0.96) | yes | 66% | 97% | 0.64 | −0.01 | yes |
+| Hindi fluency | 0.71 | 0.78 (0.70 to 0.96) | yes | 45% | 92% | 0.80 | −0.35 | no |
 
-**[PENDING: what the agreement means for the results.]** Two outcomes to write up. If the judge
-agrees about as well as the raters agree with each other and gives the same system order, the
-judge scores can be used for all nine systems, including the ones the humans did not rate. If
-not, the judge scores are reported as indicative only and the conclusions rest on the human
-ratings of the three systems. Either way, say which criterion agrees least, read from our numbers, and take the looping
-difference in E.2 into account when reading helpfulness and fluency. "Same system order"
-compares exact means, so a gap of 0.01 flips it. With 30 prompts, read it together with the
-intervals.
+**Table E3.** Mean score per system on the 90 rated answers, judge and humans (same output file).
+
+| System | Correctness judge / human | Helpfulness judge / human | Hindi fluency judge / human |
+|---|---:|---:|---:|
+| zero-shot | 1.47 / 1.46 | 1.33 / 1.41 | 1.80 / 2.18 |
+| r16_n100 | 1.63 / 1.66 | 1.70 / 1.64 | 2.60 / 3.06 |
+| r16_n775 | 1.90 / 1.93 | 1.93 / 1.96 | 2.67 / 2.88 |
+
+**What the agreement means.** By the rule fixed in advance (the judge's mean κ with the raters is at
+least the lowest of the six rater–rater κ values), the judge passes on all three criteria. The
+margins differ.
+
+- **Correctness.** The judge agrees with the raters about as well as they agree with each other
+  (κ 0.82 against a mean of 0.80). The mean difference is −0.02, and the judge puts the three
+  systems in the same order (zero-shot, r16_n100, r16_n775) as the humans.
+- **Helpfulness.** The judge is a little below the rater mean (0.76 against 0.78) and well inside
+  the range. The mean difference is −0.01 and the order is the same. Its rank correlation with the
+  mean human score is the lowest of the three (ρ = 0.64).
+- **Hindi fluency.** This agrees least. The judge's κ is 0.71 against 0.78, only just above the
+  lowest rater pair (0.70). Exact agreement is 45%, and the judge scores 0.35 lower than the
+  humans on average, for all three systems. It also orders r16_n100 and r16_n775 the other way
+  round: humans 3.06 and 2.88, judge 2.60 and 2.67. Both gaps are small (the human intervals are
+  about ±0.4 for 30 prompts), so this is a weak disagreement. The judge's prompt counts repeated
+  phrases and looping text against fluency, and the rating sheet asks for the language only
+  (E.2), which could explain the lower scores. We did not test this.
+
+So the judge scores for correctness and helpfulness can be used for all nine systems, including the
+six that the humans did not rate, with the limits in E.6. For fluency, the judge and the humans
+agree that zero-shot is lowest, but the judge's level is lower than the humans' and its order of the
+two fine-tuned systems is not reliable. We therefore do not read small fluency differences between
+fine-tuned runs from the judge. Everything here rests on three systems and 30 prompts, with
+four raters who are the authors (E.6).
 
 ### E.6 Limitations
 
@@ -213,7 +248,7 @@ baseline. See Section [Data] and Section 4.5 for the check.
   open-ended prompts with a different valid answer, a correct answer may be marked down.
 
 **Human ratings.** The raters are the authors, who know the research question and may have an
-expectation about which system is better, although the sheets hide the system. Agreement depends on how each rater read the scale (Table E1), and the raters were not calibrated (E.4). The sample is small, and the raters see the reference, which can anchor their scores.
+expectation about which system is better, although the sheets hide the system. Agreement depends on how each rater read the scale (Table E1), and the raters were not calibrated (E.4). One pair of raters agrees far more with each other than the other pairs do (E.5), so the mean rater agreement may overstate how well four independent readers would agree. The sample is small, and the raters see the reference, which can anchor their scores.
 
 **Truncated training rows.** Training is limited to 1,024 tokens, and the Qwen2.5 tokenizer
 splits Hindi into very many tokens (1.09 characters per token on our data). 103 of 775 training
