@@ -9,3 +9,7 @@ peft==0.21.2
 accelerate==1.15.0
 bitsandbytes==0.50.2
 datasets==5.2.0
+
+# Analysis and human-rating scripts (no GPU needed). Not pinned: they don't affect training.
+matplotlib
+openpyxl

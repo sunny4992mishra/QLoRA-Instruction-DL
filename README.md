@@ -31,6 +31,7 @@ src/
   prompts.py              chat-template formatting shared by training and generation
   train.py                QLoRA fine-tuning, logs memory/time/loss to run_info.json
   generate.py             answers the test prompts, with or without an adapter
+  judge.py                LLM judge: scores each answer 1-5 on three criteria (needs an API key)
   tokenizer_stats.py      tokenizer analysis (no GPU needed)
   find_near_duplicates.py finds test and validation prompts that nearly match a training row
   check_run.py            checks a run's committed files against the expected settings and counts
@@ -121,6 +122,33 @@ On our training data, the Qwen2.5 tokenizer averages **1.09 characters per token
 Section 5 of the notebook runs steps 2 and 3. The notebook writes answers to `SAVE/results/`. Copy those `*.jsonl` files into the repo's `results/` folder and commit them, so everyone evaluates the same outputs. Adapters stay out of git: only `run_info.json` is tracked under `runs/`.
 
 Before committing a run, check it with `python src/check_run.py <run name>`. It needs no GPU. It confirms that the run used the default settings, 4-bit and fp16 on a T4, and that the rows kept, trainable parameters, training steps and the 150 answers are what they should be. Every line must say PASS.
+
+## Reproducing the results
+
+The training outputs, judge scores and human ratings are committed, so steps 3 and 4 run without a GPU or an API key. Run everything from the repo root.
+
+```bash
+pip install -r requirements.txt
+
+# 1. Training and answers (T4 GPU, about 30 minutes per full-data run).
+#    Run the Quick start commands for each setting in the experiment plan,
+#    or Section 5 of the notebook.
+
+# 2. LLM judge (optional, needs a key; a hosted model's scores can change over time)
+export GEMINI_API_KEY=...    # never commit it
+python src/judge.py --all
+
+# 3. Tables, figures and answer checks
+python src/tokenizer_stats.py
+python src/find_near_duplicates.py
+python src/analyze.py
+python src/answer_stats.py
+python src/error_analysis.py
+
+# 4. Human ratings and judge-human agreement
+python src/collect_ratings.py
+python src/judge_vs_human.py
+```
 
 ## Still to do
 
