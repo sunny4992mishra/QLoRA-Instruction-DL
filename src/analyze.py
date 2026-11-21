@@ -20,9 +20,14 @@ judge line.
 The run name joins the three sources: runs/<run>/, results/<run>.jsonl, results/judge/<run>.jsonl.
 The zero-shot run has no run_info.json; it is drawn as a dashed reference line.
 
+Optional input: data/test_near_duplicates.json (from find_near_duplicates.py), the test
+prompts that have a near-copy in the training data.
+
 Outputs:
     results/summary.csv, results/summary.md     one row per run; summary.md also has paired
-                                                differences in judge scores between runs
+                                                differences in judge scores between runs, and
+                                                judge scores with and without the near-duplicate
+                                                test prompts
     figures/quality_vs_rank.png                 rank sweep (all data)
     figures/quality_vs_data_size.png            data-size sweep (r = 16)
     figures/quality_vs_memory.png               judge score against peak GPU memory
@@ -209,21 +214,33 @@ def short(name):
     return name.split("_", 1)[1] if "_" in name else name
 
 
-def paired_difference(a, b, criterion=None):
+def paired_difference(a, b, criterion=None, ids=None):
     """Mean of (a - b) over the prompts both runs have scores for, with a 95% half-width.
 
     All runs answer the same test prompts, so runs are compared prompt by prompt. This gives a
     much tighter interval for a difference than two separate per-run intervals. With
-    criterion=None the mean of the three criteria is compared.
+    criterion=None the mean of the three criteria is compared. ids restricts the prompts.
     """
     ja, jb = a.get("judge_by_id") or {}, b.get("judge_by_id") or {}
     crit = [criterion] if criterion else CRITERIA
     diffs = []
     for rid in ja.keys() & jb.keys():
+        if ids is not None and rid not in ids:
+            continue
         va, vb = [ja[rid].get(c) for c in crit], [jb[rid].get(c) for c in crit]
         if all(is_score(v) for v in va + vb):
             diffs.append(sum(va) / len(va) - sum(vb) / len(vb))
     return mean_ci(diffs) + (len(diffs),)
+
+
+def subset_mean(row, ids):
+    """Judge mean (of the three criteria) over the answers whose id is in ids."""
+    vals = []
+    for rid, r in (row.get("judge_by_id") or {}).items():
+        scores = [r.get(c) for c in CRITERIA]
+        if rid in ids and all(is_score(v) for v in scores):
+            vals.append(sum(scores) / len(scores))
+    return mean_ci(vals) + (len(vals),)
 
 
 def comparisons(table):
@@ -258,7 +275,7 @@ def sort_key(r):
     return (not r["zeroshot"], r["rank"] or 0, r["train_rows"] or 0, r["run"])
 
 
-def write_tables(table, results_dir):
+def write_tables(table, results_dir, flagged=None):
     table = sorted(table, key=sort_key)
     with open(results_dir / "summary.csv", "w", newline="", encoding="utf-8") as f:
         keys = [k for k, _, _ in COLUMNS] + [c + "_ci" for c in CRITERIA] + ["judge_mean_ci", "gpu"]
@@ -295,6 +312,39 @@ def write_tables(table, results_dir):
             n = paired_difference(a, b)[2]
             note += (f"| {short(a['run'])} − {short(b['run'])} | " + " | ".join(cell(a, b, c) for c in CRITERIA)
                      + f" | {cell(a, b, None)} | {n} |\n")
+    judged = [r for r in table if r.get("judge_by_id")]
+    if flagged and judged:
+        all_ids = set().union(*(r["judge_by_id"].keys() for r in judged))
+        rest = all_ids - flagged
+        zs = next((r for r in judged if r["zeroshot"]), None)
+
+        def pm(mu, ci, star=False):
+            if mu is None:
+                return "–"
+            text = f"{mu:+.2f}" if star else f"{mu:.2f}"
+            if ci is not None:
+                text += f" ± {ci:.2f}" + (" *" if star and abs(mu) > ci else "")
+            return text
+        note += ("\n## Judge mean with and without near-duplicate test prompts\n\n"
+                 f"{len(flagged & all_ids)} test prompts have a near-copy in the training data "
+                 "(`data/test_near_duplicates.json`). Means are over the judged answers in each group, "
+                 "with a 95% interval. The last two columns are the paired difference from zero-shot "
+                 "within each group; \\* marks an interval that excludes 0.\n\n"
+                 "| Run | All prompts | Without near-duplicates | Near-duplicates only | "
+                 "− zero-shot, without | − zero-shot, near-duplicates only |\n|---|---:|---:|---:|---:|---:|\n")
+        for r in judged:
+            cells = [pm(*subset_mean(r, ids)[:2]) for ids in (all_ids, rest, flagged)]
+            if zs is not None and r is not zs:
+                cells += [pm(*paired_difference(r, zs, ids=ids)[:2], star=True) for ids in (rest, flagged)]
+            else:
+                cells += ["–", "–"]
+            note += f"| {short(r['run'])} | " + " | ".join(cells) + " |\n"
+        if pairs:
+            sweep = [(a, b) for a, b in pairs if b is not zs]
+            note += ("\nSteps along the sweeps on the prompts without a near-copy in training "
+                     "(paired difference in the judge mean, A − B):\n\n| A − B | Without near-duplicates |\n|---|---:|\n")
+            for a, b in sweep:
+                note += f"| {short(a['run'])} − {short(b['run'])} | {pm(*paired_difference(a, b, ids=rest)[:2], star=True)} |\n"
     (results_dir / "summary.md").write_text("\n".join(lines) + "\n" + note, encoding="utf-8")
 
 
@@ -469,6 +519,9 @@ def main():
     p.add_argument("--results-dir", default="results")
     p.add_argument("--judge-dir", default=None, help="Default: <results-dir>/judge")
     p.add_argument("--figures-dir", default="figures")
+    p.add_argument("--near-duplicates", default="data/test_near_duplicates.json",
+                   help="Test prompts with a near-copy in training (from find_near_duplicates.py). "
+                        "If the file exists, judge scores are also reported with and without them.")
     args = p.parse_args()
 
     runs_dir, results_dir = Path(args.runs_dir), Path(args.results_dir)
@@ -487,7 +540,9 @@ def main():
 
     zs = next((r for r in table if r["zeroshot"]), None)
     trained = [r for r in table if not r["zeroshot"] and r["rank"] is not None]
-    write_tables(table, results_dir)
+    nd_path = Path(args.near_duplicates)
+    flagged = set(json.loads(nd_path.read_text(encoding="utf-8"))["ids"]) if nd_path.exists() else None
+    write_tables(table, results_dir, flagged)
     sweep_figure([r for r in trained if r["train_rows"] == FULL_N], zs, "rank", "LoRA rank r",
                  f"Rank sweep (all {FULL_N} training rows)", fig_dir / "quality_vs_rank.png", log2=True)
     sweep_figure([r for r in trained if r["rank"] == SWEEP_RANK], zs, "train_rows", "Training rows N",

@@ -35,3 +35,33 @@ Each row is A − B over the test prompts both runs were judged on, with a 95% i
 | r16_n500 − r16_n250 | +0.15 ± 0.15 | +0.14 ± 0.14 | +0.51 ± 0.20 * | +0.27 ± 0.14 * | 150 |
 | r16_n775 − r16_n500 | -0.01 ± 0.15 | +0.05 ± 0.15 | -0.10 ± 0.18 | -0.02 ± 0.14 | 150 |
 | r16_n775 − r16_n100 | +0.17 ± 0.21 | +0.19 ± 0.19 | +0.31 ± 0.22 * | +0.22 ± 0.18 * | 150 |
+
+## Judge mean with and without near-duplicate test prompts
+
+35 test prompts have a near-copy in the training data (`data/test_near_duplicates.json`). Means are over the judged answers in each group, with a 95% interval. The last two columns are the paired difference from zero-shot within each group; \* marks an interval that excludes 0.
+
+| Run | All prompts | Without near-duplicates | Near-duplicates only | − zero-shot, without | − zero-shot, near-duplicates only |
+|---|---:|---:|---:|---:|---:|
+| zeroshot | 1.63 ± 0.12 | 1.70 ± 0.14 | 1.42 ± 0.17 | – | – |
+| r4_n775 | 1.98 ± 0.17 | 1.90 ± 0.17 | 2.26 ± 0.46 | +0.20 ± 0.18 * | +0.84 ± 0.38 * |
+| r8_n775 | 2.03 ± 0.18 | 1.94 ± 0.18 | 2.32 ± 0.49 | +0.24 ± 0.18 * | +0.90 ± 0.42 * |
+| r16_n100 | 1.83 ± 0.16 | 1.84 ± 0.19 | 1.81 ± 0.29 | +0.14 ± 0.16 | +0.39 ± 0.26 * |
+| r16_n250 | 1.81 ± 0.18 | 1.69 ± 0.17 | 2.19 ± 0.49 | -0.01 ± 0.16 | +0.77 ± 0.46 * |
+| r16_n500 | 2.08 ± 0.17 | 1.96 ± 0.17 | 2.46 ± 0.45 | +0.26 ± 0.16 * | +1.04 ± 0.37 * |
+| r16_n775 | 2.06 ± 0.18 | 2.03 ± 0.19 | 2.15 ± 0.44 | +0.33 ± 0.16 * | +0.73 ± 0.36 * |
+| r32_n775 | 2.12 ± 0.19 | 2.10 ± 0.20 | 2.22 ± 0.48 | +0.40 ± 0.16 * | +0.80 ± 0.39 * |
+| r64_n775 | 2.03 ± 0.17 | 1.96 ± 0.17 | 2.26 ± 0.46 | +0.26 ± 0.18 * | +0.84 ± 0.40 * |
+
+Steps along the sweeps on the prompts without a near-copy in training (paired difference in the judge mean, A − B):
+
+| A − B | Without near-duplicates |
+|---|---:|
+| r8_n775 − r4_n775 | +0.04 ± 0.14 |
+| r16_n775 − r8_n775 | +0.09 ± 0.16 |
+| r32_n775 − r16_n775 | +0.07 ± 0.14 |
+| r64_n775 − r32_n775 | -0.14 ± 0.16 |
+| r64_n775 − r4_n775 | +0.06 ± 0.16 |
+| r16_n250 − r16_n100 | -0.14 ± 0.16 |
+| r16_n500 − r16_n250 | +0.27 ± 0.15 * |
+| r16_n775 − r16_n500 | +0.07 ± 0.17 |
+| r16_n775 − r16_n100 | +0.19 ± 0.19 |

@@ -7,9 +7,9 @@ are marked like `Section [Evaluation]`.
 **Status.** Cost, validation loss, the form of the answers and the LLM-judge scores are written.
 The human ratings (#14) are still marked **[PENDING]** and are not filled with guesses.
 
-All numbers come from `runs/*/run_info.json`, `results/*.jsonl` and `results/judge/*.jsonl`.
-They are reproduced by `python src/analyze.py` (Tables R1, R2, R4 and R5, Figures R1–R4) and
-`python src/answer_stats.py` (Table R3). Memory is reported in GB as PyTorch counts it, with
+All numbers come from `runs/*/run_info.json`, `results/*.jsonl`, `results/judge/*.jsonl` and
+`data/test_near_duplicates.json`. They are reproduced by `python src/analyze.py` (Tables R1, R2,
+R4, R5 and R6, Figures R1–R4) and `python src/answer_stats.py` (Table R3). Memory is reported in GB as PyTorch counts it, with
 1 GB = 1024³ bytes.
 
 ---
@@ -207,7 +207,8 @@ assistant.
 +0.18 for N = 250 to +0.49 for r = 32. For r16_n775 the gain is largest in fluency
 (+0.61 ± 0.21), then helpfulness (+0.39 ± 0.17), and smallest in correctness (+0.26 ± 0.18). The
 judge's instructions count looping and repeated phrases against fluency, so the fluency gain
-partly reflects the drop in looping in Table R3.
+partly reflects the drop in looping in Table R3. Section 4.5 shows that part of the
+overall gain comes from test prompts that have a near-copy in the training data.
 
 **Rank makes no measurable difference (Figure R1, left panel).** No step from one rank to the
 next, and not the whole range from r = 4 to r = 64 (+0.05 ± 0.14), is distinguishable from
@@ -232,14 +233,64 @@ little instruction data fixes the form of an answer before its content.
 These scores come from one judge model, which is not fully consistent with itself, and from one
 seed per setting. Section [Evaluation] discusses how far they can be trusted.
 
-### 4.5 Answer quality: human ratings
+### 4.5 Near-duplicate test prompts
+
+35 of the 150 test prompts have a near-copy in the training data: a slightly rephrased prompt, a
+nearly identical reference answer, or both (Section [Data]). A fine-tuned model can score well
+on these by repeating what it saw in training, so we report the judge scores separately for
+them and for the other 115 prompts.
+
+**Table R6.** Judge mean on the 115 test prompts without a near-copy in training and on the 35
+with one, and the paired difference from zero-shot within each group. \* marks an interval that
+excludes 0.
+
+| System | 115 prompts without | 35 near-duplicates | − zero-shot, without | − zero-shot, near-duplicates |
+|---|---:|---:|---:|---:|
+| Zero-shot | 1.70 ± 0.14 | 1.42 ± 0.17 | – | – |
+| r4_n775 | 1.90 ± 0.17 | 2.26 ± 0.46 | +0.20 ± 0.18 * | +0.84 ± 0.38 * |
+| r8_n775 | 1.94 ± 0.18 | 2.32 ± 0.49 | +0.24 ± 0.18 * | +0.90 ± 0.42 * |
+| r16_n775 | 2.03 ± 0.19 | 2.15 ± 0.44 | +0.33 ± 0.16 * | +0.73 ± 0.36 * |
+| r32_n775 | 2.10 ± 0.20 | 2.22 ± 0.48 | +0.40 ± 0.16 * | +0.80 ± 0.39 * |
+| r64_n775 | 1.96 ± 0.17 | 2.26 ± 0.46 | +0.26 ± 0.18 * | +0.84 ± 0.40 * |
+| r16_n100 | 1.84 ± 0.19 | 1.81 ± 0.29 | +0.14 ± 0.16 | +0.39 ± 0.26 * |
+| r16_n250 | 1.69 ± 0.17 | 2.19 ± 0.49 | −0.01 ± 0.16 | +0.77 ± 0.46 * |
+| r16_n500 | 1.96 ± 0.17 | 2.46 ± 0.45 | +0.26 ± 0.16 * | +1.04 ± 0.37 * |
+
+**The gain is two to four times larger on the near-duplicates.** With all 775 rows, fine-tuned
+models gain +0.73 to +0.90 over zero-shot on the 35 near-duplicate prompts and +0.20 to +0.40
+on the other 115. Zero-shot does worse on the near-duplicates than on the rest (1.42 against
+1.70), and the fine-tuned models do better (2.15 to 2.32 against 1.90 to 2.10). Part of what
+Table R4 measures is therefore memorisation of training answers, not instruction following.
+
+**The gain on unseen prompts is real but smaller than the headline.** On the 115 prompts
+without a near-copy, every full-data run and N = 500 still beat zero-shot, by +0.20 to +0.40,
+against +0.35 to +0.49 on all 150 prompts. The smaller number is the fairer estimate of what
+fine-tuning does for a new instruction. For r16_n775 it is +0.33 ± 0.16, against +0.42 ± 0.15.
+
+**With 100 or 250 rows there is no measurable gain on unseen prompts.** The differences from
+zero-shot are +0.14 ± 0.16 and −0.01 ± 0.16. The gain of these two runs in Table R5 comes from
+the near-duplicates. A run with N rows has seen only the near-copies that fall in its first N
+training rows: the closest training match of 6 of the 35 prompts lies in the first 100 rows,
+of 11 in the first 250 and of 22 in the first 500. For the smaller runs most of the 35 are
+therefore not near-copies of anything the run saw, and their wide intervals reflect that mix.
+
+**The findings on rank and data size hold on the 115 prompts.** No difference between ranks is
+distinguishable from zero (r = 64 against r = 4 is +0.06 ± 0.16), and the one clear step in
+data size is still between 250 and 500 rows (+0.27 ± 0.15). The full table is in
+`results/summary.md`.
+
+The near-duplicate group is small, so its intervals are wide, and a few of the flagged pairs
+share a topic but not a task (Section [Data]).
+
+### 4.6 Answer quality: human ratings
 
 **[PENDING: human ratings, #14.]** Mean scores per criterion for zero-shot, r16_n775 and
 r16_n100 from the four raters (`results/human/summary.md`), and whether they rank the three
-systems in the same order as the judge (zero-shot 1.63, r16_n100 1.83, r16_n775 2.06). Agreement
-between raters and between judge and humans is reported in Section [Evaluation].
+systems in the same order as the judge (zero-shot 1.63, r16_n100 1.83, r16_n775 2.06). 8 of the
+30 rated prompts are near-duplicates (Section 4.5). Agreement between raters and between judge
+and humans is reported in Section [Evaluation].
 
-### 4.6 Quality against cost
+### 4.7 Quality against cost
 
 Figure R3 plots the judge mean against peak GPU memory. The five ranks spread over 0.60 GB of
 memory and their scores overlap: r = 4 at 5.83 GB scores 1.98 and r = 64 at 6.43 GB scores 2.03.
@@ -264,9 +315,10 @@ We asked how much Hindi instruction data and what LoRA rank is enough to make a 
 follow Hindi instructions on a free GPU.
 
 **The answer from our runs:** about 500 training rows and the lowest rank we tried, r = 4. With
-fewer rows the judge sees a smaller gain; with more rows or a higher rank it sees none. "Enough"
-here means enough to get what this setup can give. It does not mean good: the best system
-averages about 2 out of 5 from the judge.
+100 or 250 rows the judge sees no gain on test prompts that have no near-copy in training; with
+more than 500 rows or a higher rank it sees no further gain. "Enough" here means enough to get
+what this setup can give. It does not mean good: the best system averages about 2 out of 5 from
+the judge.
 
 1. **Memory is not the constraint.** Every run peaks below 6.5 GB allocated, and at most 9.6 GB
    reserved, on a 16 GB T4, and a full run takes about 30 minutes. Raising the rank from 4 to 64
@@ -284,6 +336,10 @@ averages about 2 out of 5 from the judge.
    stays below 2 out of 5.
 5. **Loss and form are not quality.** Validation loss falls steadily with rank and with the
    last 275 rows, and looping falls with rank, but the judge scores do not follow either.
+6. **Part of the measured gain is memorisation.** 35 of the 150 test prompts have a near-copy
+   in training. With all 775 rows, fine-tuned models gain +0.7 to +0.9 on those and +0.2 to
+   +0.4 on the other 115, so the gain on a new instruction is smaller than all 150 prompts
+   suggest.
 
 **[PENDING: human ratings.]** Whether the four raters rank zero-shot, r16_n100 and r16_n775 in
 the same order as the judge, in one or two sentences.
@@ -291,11 +347,13 @@ the same order as the judge, in one or two sentences.
 **Limits of these results.** Each setting was run once, so small differences may be noise and
 the N = 250 outlier cannot be explained. The data-size sweep changes the number of training
 steps together with the number of rows. All runs use one base model, one language and at most
-775 training rows, and the quality scores come from one judge model. Section [Evaluation]
-discusses the limits of the judge and the human ratings.
+775 training rows, and the quality scores come from one judge model. The test set is small, and
+only 115 of its prompts are free of near-copies in training. Section [Evaluation] discusses the
+limits of the judge and the human ratings.
 
 **Future work.** Repeat each setting with several seeds. Add a run with the epoch chosen by
 validation loss. Raise the 1,024-token limit, or use a base model with a more efficient Hindi
 tokenizer such as Sarvam-1, so that fewer training rows lose their ending (Section [Data]). Add
 more Hindi instruction data from other sources to see whether quality rises again beyond 775
-rows.
+rows. Split the data by near-duplicate groups of prompts, not by exact prompt, so that the test
+set measures only new instructions.
