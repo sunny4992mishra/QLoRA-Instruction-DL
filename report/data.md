@@ -160,20 +160,25 @@ or one of its references has a `difflib` similarity of at least 0.9 with a train
 
 Most flagged pairs are clear near-copies. A few share a topic but ask something different, so 35
 is a slightly generous count. For example, two SWAYAM PRABHA prompts ask about different channels
-but have nearly the same reference.
+but have nearly the same reference. The check also misses one kind of overlap: one test prompt
+that is not flagged quotes a training response word for word as its passage, because the check
+compares prompts with prompts and references with responses.
 
 We did not change the split, because all runs already use it, and changing it would make them
-incomparable. The 35 flagged ids are listed in `data/test_near_duplicates.json`. They can be left
-out of the scores as a check: if fine-tuned models score higher on these prompts than on the
-rest, part of their gain is memorisation and not instruction following. The human rating sample
-includes 8 of the 35 (6 flagged by their reference).
+incomparable. The 35 flagged ids are listed in `data/test_near_duplicates.json`, so they can be
+left out of the scores as a check. A higher score on the flagged prompts than on the rest does
+not by itself show memorisation, because the flagged prompts may also differ from the rest in
+kind. Comparing runs that have and have not seen a near-copy, on the same prompts, separates the
+two (Section [Results]). The human rating sample includes 8 of the 35 (6 flagged by their
+reference).
 
 Two consequences follow for the other sections.
 
 - **The data-size sweep adds near-copies along with data.** The training subsets are nested, so a
   larger subset contains more of the 35 near-copies. For 10 of the 35, a near-copy is in the
-  first 100 training rows; for 17 in the first 250, 26 in the first 500, and all 35 at 775. Part
-  of any gain with data size may therefore come from seeing more near-copies of test prompts.
+  first 100 training rows; for 17 in the first 250, 26 in the first 500, and all 35 at 775. The
+  field `first_train_row` in the JSON file gives, for each flagged prompt, the position of its
+  earliest near-copy in the training order, so it shows which subsets contain one.
 - **Validation loss is affected too.** The same check flags 10 of the 50 validation prompts (10 of
   the 61 validation rows): 5 by prompt and 8 by response.
 
