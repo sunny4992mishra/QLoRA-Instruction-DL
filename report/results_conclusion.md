@@ -147,12 +147,12 @@ full-data runs, even though its validation loss barely moves (Section 4.2). This
 in Section 2 that a small amount of instruction data mainly teaches the format of an answer. It
 still loops in 46 answers, though, more than any full-data run.
 
-**Looping falls with rank.** At full data, the number of looping answers goes down as the rank
-goes up: 43, 36, 35, 30 and 15 for r = 4 to 64. The order is the same if a loop is defined by a
-6-word phrase (46, 44, 40, 33, 18) or a 5-word phrase (54, 47, 42, 34, 22), and most of the fall
-comes at r = 32 and r = 64. Among answers that also reach the limit, the shorter phrases give a
-count that is about flat from r = 4 to r = 16 (39, 39, 36 with 6 words) and lower only at r = 32
-and r = 64 (30, 17). The r = 64 model loops in 15 answers, against 79 zero-shot.
+**Looping falls at the highest ranks.** At full data, the number of looping answers goes down as
+the rank goes up: 43, 36, 35, 30 and 15 for r = 4 to 64. The order is the same if a loop is
+defined by a 6-word phrase (46, 44, 40, 33, 18) or a 5-word phrase (54, 47, 42, 34, 22), and most
+of the fall comes at r = 32 and r = 64. Among answers that also reach the limit, the shorter
+phrases give a count that is about flat from r = 4 to r = 16 (39, 39, 36 with 6 words) and lower
+only at r = 32 and r = 64 (30, 17). The r = 64 model loops in 15 answers, against 79 zero-shot.
 
 **N = 250 is an outlier.** Its answers have a median of 417 tokens, 70 run to the limit and 71
 loop. That puts it between N = 100 and zero-shot, although its validation loss lies between
@@ -404,20 +404,26 @@ it costs training time, not memory: 21 minutes for 500 rows against 4 for 100.
 We asked how much Hindi instruction data and what LoRA rank is enough to make a 1.5B model
 follow Hindi instructions on a free GPU.
 
-**The answer from our runs:** about 500 training rows (at r = 16), and no rank above r = 4 (at
-775 rows). We did not run r = 4 with 500 rows. With 100 rows the gain is small and borderline
-(+0.14 ± 0.16 on the 115 prompts with no near-copy, +0.21 ± 0.15 on the 140 with no near-copy in
-its own rows); with more than 500 rows or a higher rank the judge sees no further gain. "Enough" here means enough to get
-what this setup can give. It does not mean good: the best system averages about 2 out of 5 from
-the judge.
+**The answer from our runs:** by the LLM judge, about 500 training rows are enough at r = 16, and
+we could not measure a benefit from any rank above r = 4 at 775 rows (r = 64 against r = 4 is
++0.05 ± 0.14, which does not rule out a gain of up to about +0.19). Among the fine-tuned runs, the
+step to 500 rows is the only clear one, and it starts from N = 250, an unexplained outlier that
+scores like N = 100. Skipping that outlier, 500 rows beats 100 by +0.24 ± 0.18 on all 150 prompts,
+but by only +0.12 ± 0.19 on the 115 without a near-copy, so the evidence that 500 rows are needed
+rather than 100 is limited. We did not run r = 4 with 500 rows. With 100 rows the gain over
+zero-shot is small and borderline (+0.14 ± 0.16 on the 115 prompts with no near-copy, +0.21 ± 0.15
+on the 140 with no near-copy in its own rows); with more than 500 rows or a higher rank we could
+not measure a further gain. "Enough" here means enough to get what this setup can give. It does
+not mean good: the best system averages about 2 out of 5 from the judge.
 
 1. **Memory is not the constraint.** Every run peaks below 6.5 GB allocated, and at most 9.6 GB
    reserved, on a 16 GB T4, and a full run takes about 30 minutes. Raising the rank from 4 to 64
    costs 0.6 GB and no extra time.
 2. **Data matters more than rank.** Going from 100 to 775 rows lowers the validation loss more
-   than five times as much as going from r = 4 to r = 64, and only data size moves the judge
-   scores. The loss is still falling at 775 rows, which is all of our training split; the other
-   241 clean rows are held out for validation and testing.
+   than five times as much as going from r = 4 to r = 64, and among the fine-tuned runs, the only
+   step in the judge scores that is distinguishable from zero is from 250 to 500 rows. The loss is
+   still falling at 775 rows, which is all of our training split; the other 241 clean rows are
+   held out for validation and testing.
 3. **Higher ranks overfit more.** With three epochs, the validation loss of every rank rises in
    the last one, by +0.002 at r = 4 and up to +0.036 at r = 64. Choosing the epoch by validation
    loss, or training for two epochs, might serve the higher ranks better than our fixed three.
@@ -435,7 +441,7 @@ the judge.
 **Human ratings.** On 30 prompts, the four raters also score both fine-tuned systems above
 zero-shot (+0.57 ± 0.37 for r16_n775 and +0.44 ± 0.21 for r16_n100). They cannot separate 775 rows
 from 100 (+0.14 ± 0.42). The human sample did not include other ranks or 250 and 500 rows, so our
-answer of about 500 rows and no rank above r = 4 rests on the LLM judge.
+findings on 500 rows and on rank rest on the LLM judge.
 
 **Limits of these results.** Each setting was run once, so small differences may be noise and
 the N = 250 outlier cannot be explained. The data-size sweep changes the number of training
