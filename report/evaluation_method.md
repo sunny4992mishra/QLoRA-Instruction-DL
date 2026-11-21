@@ -1,6 +1,6 @@
 # P16 report: Evaluation method, judge vs human agreement, limitations
 
-Draft for issue #10 (Shahid). Section, table and figure numbers are placeholders until the report
+Draft (Shahid). Section, table and figure numbers are placeholders until the report
 is assembled; tables here are numbered E1, E2, … Cross-references to other sections are marked
 like `Section [Data]`, and to results tables as in `report/results_conclusion.md` (R1, R2, …).
 
@@ -47,7 +47,8 @@ with one difference that matters for looping and cut-off answers. The rating she
 cut-off or looping answer against **helpfulness** and asks for fluency on the language only. The
 judge prompt counts repeated phrases and looping text against **fluency**, says a looping answer
 can still be correct in its first part (correctness), and says nothing about looping under
-helpfulness. 42 of the 90 rated answers loop (the 8-word repeat rule of `answer_stats.py`), so
+helpfulness. 42 of the 90 rated answers loop (the 8-word repeat rule of `answer_stats.py`; 38 of them also run to the generation limit,
+which is how the error analysis counts loops), so
 this difference can lower judge–human agreement on helpfulness and fluency for reasons that are
 not about the quality of the judge (E.5). The judging was finished before this was noticed, and
 we did not change either text afterwards.
@@ -119,8 +120,8 @@ on its own.
 
 ### E.5 Agreement
 
-**Between raters.** For each criterion we report Krippendorff's alpha (interval) over all raters,
-the mean pairwise weighted kappa (quadratic weights), and the share of rater pairs that give the
+**Between raters.** For each criterion we report Krippendorff's alpha (interval; Krippendorff, 2011) over all raters,
+the mean pairwise weighted kappa (quadratic weights; Cohen, 1968), and the share of rater pairs that give the
 same score or scores at most 1 apart on the same answer.
 
 **Table E1.** Agreement between the four raters, per criterion (output of
@@ -285,7 +286,7 @@ expectation about which system is better, although the sheets hide the system. A
 **Truncated training rows.** Training is limited to 1,024 tokens, and the Qwen2.5 tokenizer
 splits Hindi into very many tokens (1.09 characters per token on our data). 103 of 775 training
 rows are cut at the limit, and 9 more are dropped because the prompt alone is too long. Together
-this loses 34% of all response tokens (Section [Data]). For the cut rows, the response is cut off
+this loses 34.5% of all response tokens (Section [Data]). For the cut rows, the response is cut off
 before the end-of-turn token, so these rows show the model an answer that never ends. This is a
 likely cause of answers that run to the 512-token limit (Section 4.3), and it affects every
 fine-tuned system in the same way. It limits what any rank or data size can reach with this model
@@ -296,3 +297,12 @@ recipe, except for rank and data size. The base model's documentation does not n
 its supported languages (Section 3.1). We evaluate epoch-3 adapters, which are slightly
 over-trained for the higher ranks (Section 4.2). We did not measure the base model's validation
 loss, safety or other abilities.
+
+---
+
+## References
+
+- Cohen, J. (1968). Weighted kappa: Nominal scale agreement with provision for scaled disagreement
+  or partial credit. *Psychological Bulletin*, 70(4), 213–220.
+- Krippendorff, K. (2011). Computing Krippendorff's alpha-reliability. Departmental Papers (ASC),
+  University of Pennsylvania. https://repository.upenn.edu/asc_papers/43
