@@ -20,6 +20,9 @@ train.jsonl is written in a fixed random order. Taking the first N rows gives ne
 (100 ⊂ 250 ⊂ 500 ...) for the data-size experiments.
 """
 
+# Note: "no test prompt is ever seen in training" means word for word. 35 of the 150 test
+# prompts still have a near-copy in training (see src/find_near_duplicates.py).
+
 import argparse
 import hashlib
 import json
@@ -30,14 +33,22 @@ from pathlib import Path
 
 from datasets import load_dataset
 
+# Any character in the Unicode Devanagari block (U+0900 to U+097F), the script Hindi is
+# written in. Used in step 3 to find prompts that contain no Hindi at all.
 DEVANAGARI = re.compile(r"[\u0900-\u097F]")
+# Quote pairs that may wrap a whole text: straight double, curly double, straight single.
 QUOTE_PAIRS = [('"', '"'), ("“", "”"), ("'", "'")]
 
 
 def clean(text):
+    # Step 1: use "\n" for every line break (Windows "\r\n" and old Mac "\r" included),
+    # and strip leading and trailing whitespace.
     text = text.replace("\r\n", "\n").replace("\r", "\n").strip()
     for left, right in QUOTE_PAIRS:
         inner = text[1:-1]
+        # Remove the outer quotes only if they wrap the whole text and there are no other
+        # quotes of that kind inside. So '"abc"' becomes 'abc', but '"a" and "b"' is kept
+        # as it is, because those quotes belong to the text.
         if (
             len(text) >= 2
             and text.startswith(left)
@@ -46,19 +57,27 @@ def clean(text):
             and right not in inner
         ):
             text = inner.strip()
-            break
+            break  # remove at most one pair
     return text
 
 
 def prompt_key(text):
+    # Collapse all runs of whitespace into single spaces. Two prompts that differ only in
+    # spacing or line breaks get the same key, so they count as the same prompt for
+    # duplicate removal and for the split.
     return " ".join(text.split())
 
 
 def short_hash(*parts):
+    # A stable 10-character id: SHA-1 of the parts, joined by the "unit separator" control
+    # character \x1f so that ("ab", "c") and ("a", "bc") hash differently. The same text
+    # always gets the same id, on every machine and every run.
     return hashlib.sha1("\x1f".join(parts).encode("utf-8")).hexdigest()[:10]
 
 
 def write_jsonl(path, rows):
+    # One JSON object per line. ensure_ascii=False writes Hindi as readable characters
+    # instead of \u escape codes.
     with open(path, "w", encoding="utf-8") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
@@ -76,19 +95,27 @@ def main():
                    help="Keep prompts that contain no Devanagari (dropped by default, see step 3).")
     args = p.parse_args()
 
+    # Load Aya's train split (its test split has no Hindi rows) and keep only Hindi rows.
+    # This gives 1,153 rows.
     ds = load_dataset(args.dataset, split="train")
     ds = ds.filter(lambda r: r["language_code"] == args.language_code)
+    # Counter starts every count at 0, so stats["dropped_empty"] += 1 works without setup.
     stats = Counter(raw_rows=len(ds))
 
     rows, seen_pairs = [], set()
     for r in ds:
+        # Aya calls the prompt "inputs" and the answer "targets".
         instruction, response = clean(r["inputs"]), clean(r["targets"])
+        # Step 2: drop rows with an empty prompt or response (0 rows in our data).
         if not instruction or not response:
             stats["dropped_empty"] += 1
             continue
+        # Step 3: drop prompts with no Devanagari (115 rows).
         if not args.keep_non_hindi_prompts and not DEVANAGARI.search(instruction):
             stats["dropped_non_hindi_prompt"] += 1
             continue
+        # Step 4: drop exact duplicate (prompt, response) pairs (22 rows). The set remembers
+        # every pair kept so far.
         pair = (prompt_key(instruction), response)
         if pair in seen_pairs:
             stats["dropped_duplicate_pair"] += 1
@@ -98,23 +125,34 @@ def main():
             "id": "aya-hi-" + short_hash(*pair),
             "instruction": instruction,
             "response": response,
+            # "original-annotations" (written by an annotator) or "re-annotations" (a human
+            # edit of automatically generated text).
             "annotation_type": r["annotation_type"],
         })
-    stats["clean_rows"] = len(rows)
+    stats["clean_rows"] = len(rows)  # 1,016
 
     # Group rows by prompt; original annotations first so they become the main test reference.
+    # The sort key is False for originals and True for re-annotations, and False sorts first.
+    # Python's sort is stable, so rows otherwise keep their dataset order.
     groups = OrderedDict()
     for row in sorted(rows, key=lambda r: r["annotation_type"] != "original-annotations"):
         groups.setdefault(prompt_key(row["instruction"]), []).append(row)
+    # Sort the prompts first, then shuffle with the fixed seed. Sorting makes the starting
+    # order the same on every machine, so the shuffle always gives the same split.
     keys = sorted(groups)
     random.Random(args.seed).shuffle(keys)
-    stats["unique_prompts"] = len(keys)
+    stats["unique_prompts"] = len(keys)  # 875
 
+    # Split the shuffled prompts (not rows): the first 150 go to test, the next 50 to
+    # validation, and the remaining 675 to training. All rows of a prompt stay together.
     n_test, n_val = args.test_prompts, args.val_prompts
     if n_test + n_val >= len(keys):
         raise SystemExit(f"Only {len(keys)} prompts; test+val sizes are too large.")
     test_keys, val_keys, train_keys = keys[:n_test], keys[n_test:n_test + n_val], keys[n_test + n_val:]
 
+    # Test set: one entry per prompt. "reference" is the first answer (the original
+    # annotation when there is one), which the judge and the raters see. "references" keeps
+    # every answer: 25 test prompts have more than one, 180 answers in total.
     test = []
     for k in test_keys:
         g = groups[k]
@@ -124,9 +162,12 @@ def main():
             "reference": g[0]["response"],
             "references": [r["response"] for r in g],
         })
+    # Validation and training keep every row of their prompts: 61 and 775 rows.
     val = [r for k in val_keys for r in groups[k]]
     train = [r for k in train_keys for r in groups[k]]
     random.Random(args.seed).shuffle(train)  # fixed order -> nested data-size subsets
+    # Because the order is fixed, train.py --train-size N takes the first N rows, and every
+    # smaller subset is part of every larger one (100 ⊂ 250 ⊂ 500 ⊂ 775).
 
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -134,6 +175,8 @@ def main():
     write_jsonl(out / "val.jsonl", val)
     write_jsonl(out / "test.jsonl", test)
 
+    # Record the counts of every step in data/split_stats.json (the cleaning table in the
+    # report comes from this file).
     stats.update({
         "train_rows": len(train), "train_prompts": len(train_keys),
         "val_rows": len(val), "val_prompts": len(val_keys),
