@@ -45,6 +45,7 @@ def ranks(values):
         while j + 1 < len(order) and values[order[j + 1]] == values[order[i]]:
             j += 1
         for k in range(i, j + 1):
+            # Why mean ranks: 1-5 scores have many ties, and tied answers must get the same rank.
             out[order[k]] = (i + j) / 2 + 1
         i = j + 1
     return out
@@ -107,6 +108,8 @@ def main():
         rk = [weighted_kappa([a for a, _ in v], [b for _, b in v]) for v in rr_pairs.values()]
         rk = [k for k in rk if k is not None]
         flat = [pair for v in j_pairs.values() for pair in v]
+        # Spearman is Pearson on ranks, so it compares ordering and ignores the judge's scale
+        # offset.
         rho = pearson(ranks(scores_j), ranks(means_h)) if len(keys) > 2 else None
         by_system = {}
         for s in systems:
@@ -120,12 +123,15 @@ def main():
             "kappa_rater_vs_rater": sum(rk) / len(rk) if rk else None,
             "kappa_rater_vs_rater_min": min(rk) if rk else None,
             "kappa_rater_vs_rater_max": max(rk) if rk else None,
+            # Why the lowest pair only: a judge that agrees better than every rater pair should
+            # still pass.
             "judge_at_least_lowest_pair": bool(jk and rk and sum(jk) / len(jk) >= min(rk)),
             "exact": sum(a == b for a, b in flat) / len(flat) if flat else None,
             "within_1": sum(abs(a - b) <= 1 for a, b in flat) / len(flat) if flat else None,
             "spearman_rho": rho,
             "mean_difference_judge_minus_human": (sum(scores_j) - sum(means_h)) / len(keys) if keys else None,
             "by_system": by_system,
+            # Compares exact means, so a tiny gap can flip it. Read it with the intervals.
             "same_system_order": order("judge") == order("human"),
         }
 

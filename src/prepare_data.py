@@ -111,11 +111,13 @@ def main():
             stats["dropped_empty"] += 1
             continue
         # Step 3: drop prompts with no Devanagari (115 rows).
+        # Trade-off: this also loses 2 romanised-Hindi prompts and 1 genuine translation task.
         if not args.keep_non_hindi_prompts and not DEVANAGARI.search(instruction):
             stats["dropped_non_hindi_prompt"] += 1
             continue
         # Step 4: drop exact duplicate (prompt, response) pairs (22 rows). The set remembers
         # every pair kept so far.
+        # Why the pair and not the prompt: one prompt can validly have several different answers.
         pair = (prompt_key(instruction), response)
         if pair in seen_pairs:
             stats["dropped_duplicate_pair"] += 1
@@ -136,6 +138,8 @@ def main():
     # Python's sort is stable, so rows otherwise keep their dataset order.
     groups = OrderedDict()
     for row in sorted(rows, key=lambda r: r["annotation_type"] != "original-annotations"):
+        # Why group by prompt: a row-level split could put one prompt in train and test, so the
+        # test would partly measure recall.
         groups.setdefault(prompt_key(row["instruction"]), []).append(row)
     # Sort the prompts first, then shuffle with the fixed seed. Sorting makes the starting
     # order the same on every machine, so the shuffle always gives the same split.
@@ -165,6 +169,8 @@ def main():
     # Validation and training keep every row of their prompts: 61 and 775 rows.
     val = [r for k in val_keys for r in groups[k]]
     train = [r for k in train_keys for r in groups[k]]
+    # Why shuffle rows again: train is still grouped by prompt, so the first N rows would cover
+    # fewer distinct prompts.
     random.Random(args.seed).shuffle(train)  # fixed order -> nested data-size subsets
     # Because the order is fixed, train.py --train-size N takes the first N rows, and every
     # smaller subset is part of every larger one (100 ⊂ 250 ⊂ 500 ⊂ 775).

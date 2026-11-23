@@ -87,6 +87,7 @@ def mean_ci(values):
     if n < 2:
         return mu, None
     sd = math.sqrt(sum((v - mu) ** 2 for v in values) / (n - 1))
+    # 95% interval: 1.96 x standard error (sd / sqrt(n)), assuming an approximately normal mean.
     return mu, 1.96 * sd / math.sqrt(n)
 
 
@@ -155,6 +156,8 @@ def judge_stats(rows):
             if is_score(v):
                 scores[c].append(float(v))
                 vals.append(float(v))
+        # Why complete answers only: a missing criterion would otherwise change what this mean
+        # measures.
         if len(vals) == len(CRITERIA):
             per_answer_mean.append(sum(vals) / len(vals))
     out["n_judged"] = len(per_answer_mean)
@@ -229,6 +232,7 @@ def paired_difference(a, b, criterion=None, ids=None):
             continue
         va, vb = [ja[rid].get(c) for c in crit], [jb[rid].get(c) for c in crit]
         if all(is_score(v) for v in va + vb):
+            # Same prompt on both sides, so prompt difficulty cancels out of the difference.
             diffs.append(sum(va) / len(va) - sum(vb) / len(vb))
     return mean_ci(diffs) + (len(diffs),)
 
@@ -251,8 +255,10 @@ def comparisons(table):
     pairs = [(r, zs) for r in trained] if zs else []
     for sweep in (sorted((r for r in trained if r["train_rows"] == FULL_N), key=lambda r: r["rank"]),
                   sorted((r for r in trained if r["rank"] == SWEEP_RANK), key=lambda r: r["train_rows"])):
+        # Why adjacent steps: they show where along a sweep the score actually changes.
         pairs += [(hi, lo) for lo, hi in zip(sweep, sweep[1:])]
         if len(sweep) > 2:
+            # Why first against last: small steps can each be unclear while the whole range is not.
             pairs.append((sweep[-1], sweep[0]))
     return pairs
 
@@ -299,6 +305,7 @@ def write_tables(table, results_dir, flagged=None, first_row=None):
             "(`statistics.median`).\n")
     pairs = comparisons(table)
     if pairs:
+        # * means abs(mean) > half-width, so the 95% interval excludes 0.
         def cell(a, b, c):
             mu, ci, _ = paired_difference(a, b, c)
             if mu is None:
@@ -354,6 +361,8 @@ def write_tables(table, results_dir, flagged=None, first_row=None):
                      "No copy in its rows (last two together) |\n|---|---:|---:|---:|---:|\n")
             for r in sorted((x for x in judged if not x["zeroshot"] and x["rank"] == SWEEP_RANK
                              and x["train_rows"] < FULL_N), key=lambda x: x["train_rows"]):
+                # Why split seen and unseen: memorisation can only help prompts whose near-copy
+                # this run trained on.
                 seen = {i for i, f in first_row.items() if f < r["train_rows"]}
                 unseen = flagged - seen
                 groups = (seen, unseen, rest, unseen | rest)

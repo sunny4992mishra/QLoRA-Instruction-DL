@@ -63,6 +63,8 @@ def load_base_model(name, quantize=True):
             # scaling constant. This also quantizes those constants, saving a little more memory.
             bnb_4bit_use_double_quant=True,
             # Weights are stored in 4 bits but computed in fp16 (on the T4).
+            # Why not compute in 4 bits: quantization saves storage, but forward and backward
+            # passes need fp16 precision.
             bnb_4bit_compute_dtype=dtype,
         )
     model = AutoModelForCausalLM.from_pretrained(name, **kwargs)

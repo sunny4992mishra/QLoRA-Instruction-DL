@@ -52,6 +52,7 @@ def check_run_info(info, rank, n):
     kept = KEPT[n]
     batches = math.ceil(kept / DEFAULTS["batch_size"])
     steps = math.ceil(batches / DEFAULTS["grad_accum"]) * DEFAULTS["epochs"]
+    # Why fail on any changed default: rank and data size must be the only variables between runs.
     changed = {k: args.get(k) for k, v in DEFAULTS.items() if args.get(k) != v}
     evals = [h["eval_loss"] for h in info["log_history"] if "eval_loss" in h]
     gpu = info["gpu_memory_peak_training"]
@@ -59,6 +60,7 @@ def check_run_info(info, rank, n):
     yield f"train size {n}", args["train_size"] == (0 if n == FULL_TRAIN else n)
     yield "all other settings are the defaults" + (f" (changed: {changed})" if changed else ""), not changed
     yield "4-bit, fp16", info["quantized_4bit"] and info["compute_dtype"] == "torch.float16"
+    # Why require a T4: memory and time are only comparable on the same GPU.
     yield f"GPU is a T4 (got {gpu.get('gpu')})", "T4" in gpu.get("gpu", "")
     yield f"{kept} rows kept after truncation (got {info['train_tokens']['kept']})", info["train_tokens"]["kept"] == kept
     yield f"{TRAINABLE[rank]:,} trainable params (got {info['trainable_params']:,})", info["trainable_params"] == TRAINABLE[rank]

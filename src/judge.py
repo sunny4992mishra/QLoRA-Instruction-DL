@@ -41,6 +41,8 @@ PROVIDERS = {  # name -> (endpoint, environment variable with the key, default m
 CRITERIA = ["correctness", "helpfulness", "fluency"]
 MAX_CHARS = 3000  # per field; answers are at most 512 tokens, a few references are longer
 
+# Why one fixed prompt: scores stay comparable across all nine systems. It counts looping under
+# fluency, unlike the human sheet, and looping answers hold most of the 0.35 fluency gap.
 PROMPT = """You are a strict, impartial evaluator of answers written in Hindi.
 
 For each item below you get a QUESTION, a REFERENCE answer written by a human, and the ANSWER to evaluate. Score the ANSWER (not the reference) from 1 to 5 on three criteria:
@@ -91,6 +93,8 @@ def call(provider, model, prompt, key, retries=6):
     if provider == "gemini":
         url = url.format(model=model)
         headers = {"x-goog-api-key": key, "Content-Type": "application/json"}
+        # Why temperature 0: to reduce randomness. The judge is still noisy: 45% of 258 identical-
+        # answer pairs got different scores.
         body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}],
                 "generationConfig": {"temperature": 0, "maxOutputTokens": 8000,
                                      "responseMimeType": "application/json"}}
@@ -114,6 +118,7 @@ def call(provider, model, prompt, key, retries=6):
                 raise SystemExit("Daily free-request limit reached. Run the same command again later.")
             if e.code in (400, 401, 402, 403, 404):
                 raise SystemExit(f"HTTP {e.code}: {msg[:300]}")
+            # Why exponential backoff: it gives a rate-limited free API time to recover.
             wait = 10 * 2 ** attempt
         except (urllib.error.URLError, TimeoutError, RuntimeError, KeyError, IndexError) as e:
             msg, wait = str(e), 10 * 2 ** attempt
@@ -125,6 +130,7 @@ def call(provider, model, prompt, key, retries=6):
 def parse(text, k):
     """Return k dicts of scores (None where missing or invalid) from the judge's reply."""
     scores = [dict.fromkeys(CRITERIA) for _ in range(k)]
+    # Why search for the list: a model can wrap valid JSON in extra text.
     m = re.search(r"\[.*\]", text or "", re.S)
     if not m:
         return scores
@@ -136,6 +142,8 @@ def parse(text, k):
         n = obj.get("n") if isinstance(obj, dict) else None
         if isinstance(n, int) and 1 <= n <= k:
             vals = {c: obj.get(c) for c in CRITERIA}
+            # Why reject invalid scores: they stay null and are retried instead of skewing the
+            # means.
             if all(isinstance(v, int) and not isinstance(v, bool) and 1 <= v <= 5 for v in vals.values()):
                 scores[n - 1] = vals
     return scores
@@ -151,6 +159,7 @@ def write(path, rows, done):
     with open(tmp, "w", encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(done.get(r["id"]) or {"id": r["id"], **dict.fromkeys(CRITERIA)}, ensure_ascii=False) + "\n")
+    # Why a temp file: a crash during writing can't leave a half-written score file.
     tmp.replace(path)
 
 
@@ -165,6 +174,8 @@ def judge_run(name, args, key):
     if args.limit:
         todo = todo[: args.limit]
     print(f"{name}: {len(done)} already scored, {len(todo)} to do", flush=True)
+    # Why batches of 10: 1,350 answers fit in 135 free-tier requests. Trade-off: neighbouring
+    # answers may affect a score.
     for i in range(0, len(todo), args.batch):
         chunk = todo[i : i + args.batch]
         text = call(args.provider, args.model, build_prompt(chunk), key)

@@ -7,6 +7,8 @@ otherwise the fine-tuned model sees a different format at test time.
 # Fixed Hindi system prompt, added to every example in training and generation.
 # In English: "You are an assistant. Follow the user's instruction and give a clear and
 # correct answer in Hindi." Together with the chat template it adds 93 tokens to every example.
+# Why fixed: a different prompt per run would add a second variable to the rank and data-size
+# sweeps.
 SYSTEM_PROMPT = "आप एक सहायक हैं। उपयोगकर्ता के निर्देश का पालन करें और हिंदी में स्पष्ट और सही उत्तर दें।"
 
 # Used only when the tokenizer has no chat template (plain base models).
@@ -72,6 +74,8 @@ def build_example(tokenizer, instruction, response, system=SYSTEM_PROMPT):
     # The full text must begin with exactly the prompt text, so that everything after it is
     # the response. train.py gives the prompt tokens the label -100 (no loss) and trains on
     # the response tokens only.
+    # What breaks without this check: the slice below could start at the wrong place and silently
+    # train on the wrong tokens.
     if not full.startswith(prompt):
         raise ValueError(
             "Chat template output for the full conversation does not start with the "

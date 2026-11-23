@@ -46,6 +46,7 @@ def length_stats(rows, tok, max_len):
         response_tokens += n_response
         if n_prompt >= max_len:
             n_dropped += 1
+            # A dropped row loses its whole response.
             lost_per_row.append(n_response)
         elif n_prompt + n_response > max_len:
             n_truncated += 1
@@ -66,6 +67,7 @@ def length_stats(rows, tok, max_len):
 
 def chars_per_token(rows, tok):
     """Corpus-level ratio: total characters / total tokens over instructions and responses."""
+    # Why raw text: leaving out the 93-token template measures only how the tokenizer splits Hindi.
     texts = [r["instruction"] for r in rows] + [r["response"] for r in rows]
     n_chars = sum(len(t) for t in texts)
     n_tokens = sum(len(ids) for ids in tok(texts, add_special_tokens=False)["input_ids"])

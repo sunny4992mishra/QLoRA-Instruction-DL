@@ -118,15 +118,20 @@ def classify(a):
     if (a["devanagari_share"] < 0.5 and a["latin_words"] >= 3
             and a["ref_devanagari_share"] >= 0.5):
         return "not_hindi"
+    # Why loops come before ok: a loop is an error even if its start is right. So zero-shot has 17
+    # answers with correctness >= 3 but only 13 in ok.
     if a["hits_limit"] and a["max_repeat"] >= LOOP_K:
         return "loops"
     c, f = a["correctness"], a["fluency"]
+    # Why ok comes before cut_off: a long, correct answer isn't an error. 5 answers are in this
+    # case.
     if c is not None and c >= 3:
         return "ok"
     if a["hits_limit"]:
         return "cut_off"
     if c is None:      # judge failed on this answer
         return "weak"
+    # Why before copies_prompt: a fluent wrong restatement is reported as a wrong fact.
     if f is not None and f >= 4:
         return "wrong_fluent"
     if a["copy_share"] >= COPY_SHARE and a["instruction_covered"] >= COVER_SHARE:

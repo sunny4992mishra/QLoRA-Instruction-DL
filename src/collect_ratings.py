@@ -64,6 +64,7 @@ def parse_score(value, where):
         number = float(str(value).strip())
     except ValueError:
         sys.exit(f"{where}: '{value}' is not a score (whole number 1-5)")
+    # Why stop on a bad value: a typed N/A or 0 would otherwise corrupt the means without warning.
     if number != int(number) or not 1 <= number <= 5:
         sys.exit(f"{where}: '{value}' is not a score (whole number 1-5)")
     return int(number)
@@ -127,6 +128,7 @@ def krippendorff_alpha_interval(units):
     # Sum of squared differences over all ordered pairs of the pooled values:
     # sum_{i,j} (x_i - x_j)^2 = 2 * n * sum (x - mean)^2.
     mu = sum(values) / n
+    # alpha = 1 - observed / expected disagreement: 1 is perfect agreement and 0 is chance.
     expected = 2 * n * sum((v - mu) ** 2 for v in values) / (n * (n - 1))
     if expected == 0:
         return None  # every score is the same; alpha is undefined
@@ -140,10 +142,12 @@ def weighted_kappa(a, b, categories=(1, 2, 3, 4, 5)):
         return None
     k = len(categories)
     index = {c: i for i, c in enumerate(categories)}
+    # Why quadratic: scores are ordered, so a 1 vs 5 disagreement costs 16 times a 1 vs 2.
     weight = lambda i, j: (i - j) ** 2 / (k - 1) ** 2
     observed = sum(weight(index[x], index[y]) for x, y in zip(a, b)) / n
     pa = [sum(index[x] == i for x in a) / n for i in range(k)]
     pb = [sum(index[y] == j for y in b) / n for j in range(k)]
+    # Expected disagreement if both raters scored at random with their own score distributions.
     expected = sum(pa[i] * pb[j] * weight(i, j) for i in range(k) for j in range(k))
     if expected == 0:
         return None  # both raters gave one and the same score throughout
@@ -212,6 +216,8 @@ def main():
             n_raters = 0
             for c in CRITERIA:
                 vals = [sheets[r][item][c] for r in raters if sheets[r][item][c] is not None]
+                # Why average only given scores: blank means not applicable, not zero. Fluency on
+                # items 2 and 9 uses two raters.
                 rec[c] = sum(vals) / len(vals) if vals else None
                 n_raters = max(n_raters, len(vals))
             rec["n_raters"] = n_raters
