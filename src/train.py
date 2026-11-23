@@ -51,10 +51,14 @@ def tokenize(rows, tok, max_len):
         # Labels are what the model is trained to predict. -100 is the value PyTorch's
         # cross-entropy loss ignores, so prompt tokens add nothing to the loss. The model
         # learns to write answers, not to predict the instruction.
+        # If labels were simply ids: the loss would also train on the fixed system prompt and
+        # instruction, which weakens the signal for writing answers.
         labels = [-100] * len(p_ids) + r_ids
         # Cut rows longer than the limit. They keep the prompt and the start of the answer but
         # lose its end, including the end-of-turn token. 103 of 775 rows, losing 34.5% of all
         # response tokens.
+        # Why cut the end: the instruction must stay complete. Trade-off: cut rows lose their end-
+        # of-turn token and never teach stopping.
         if len(ids) > max_len:
             n_truncated += 1
             ids, labels = ids[:max_len], labels[:max_len]
@@ -77,17 +81,23 @@ def main():
     p.add_argument("--train-file", default="data/splits/train.jsonl")
     p.add_argument("--val-file", default="data/splits/val.jsonl")
     p.add_argument("--train-size", type=int, default=0, help="First N training rows (0 = all). Subsets are nested.")
+    # Why sweep rank: it sets adapter capacity. r = 4 to 64 is 16x the parameters but only +0.60
+    # GB, with no measurable judge gain.
     p.add_argument("--rank", type=int, default=16, help="LoRA rank r")
     p.add_argument("--alpha", type=int, default=None, help="LoRA alpha (default 2 * rank)")
     p.add_argument("--dropout", type=float, default=0.05)
     # "all-linear" puts adapters on every linear layer of every transformer block (attention
     # q, k, v, o and MLP gate, up, down), as the QLoRA paper recommends.
     p.add_argument("--target-modules", default="all-linear")
+    # Why fixed epochs: every run is treated alike. Trade-off: smaller N also gets fewer steps (21
+    # at N = 100, 144 at 775).
     p.add_argument("--epochs", type=float, default=3)
     p.add_argument("--lr", type=float, default=2e-4)
     # Effective batch = 2 * 8 = 16. Small per-step batch keeps 1.5B-3B models within a 16 GB T4.
     p.add_argument("--batch-size", type=int, default=2)
     p.add_argument("--grad-accum", type=int, default=8)
+    # Trade-off of 1,024: it bounds activation memory, the main part of peak memory, but loses
+    # 34.5% of response tokens.
     p.add_argument("--max-seq-len", type=int, default=1024)
     p.add_argument("--warmup-ratio", type=float, default=0.03)
     p.add_argument("--max-steps", type=int, default=-1, help="Override epochs (for quick tests)")
@@ -108,6 +118,8 @@ def main():
     if args.train_size:
         if args.train_size > len(train_rows):
             raise SystemExit(f"--train-size {args.train_size} > {len(train_rows)} available rows")
+        # Why nested subsets: a larger N only adds rows, so a score change isn't caused by a
+        # different sample.
         train_rows = train_rows[: args.train_size]
     val_rows = load_jsonl(args.val_file)
 
@@ -119,6 +131,7 @@ def main():
     tok = load_tokenizer(args.model)
     # In training, padding goes on the right (after the text). Padded positions get
     # attention mask 0 and label -100, so they don't affect the model or the loss.
+    # Right padding is safe here because nothing is generated. generate.py needs left padding.
     tok.padding_side = "right"
     train_ds, train_tok_info = tokenize(train_rows, tok, args.max_seq_len)
     val_ds, val_tok_info = tokenize(val_rows, tok, args.max_seq_len)
@@ -218,6 +231,8 @@ def main():
 
     # Save the final adapter (the end of epoch 3, the one evaluated in every run) with a copy
     # of the tokenizer. A PEFT model saves only the small adapter weights, not the base model.
+    # Why not reload the best epoch: all runs stay comparable. Cost: full-data runs were best at
+    # epoch 2, so r = 64 is over-trained by +0.036.
     trainer.save_model(str(out_dir / "adapter"))
     tok.save_pretrained(str(out_dir / "adapter"))
 

@@ -36,16 +36,22 @@ def norm(text):
 
 
 def grams(text, n=4):
+    # Why character 4-grams: they survive small edits such as an added prefix, punctuation or a
+    # Hindi spelling variant.
     return {text[i:i + n] for i in range(max(1, len(text) - n + 1))}
 
 
 def jaccard(a, b):
+    # Why Jaccard: shared grams / all grams, so a small edit keeps the score high and a different
+    # prompt scores low.
     return len(a & b) / len(a | b)
 
 
 def text_similarity(a, b, threshold):
     """difflib ratio, or 0 when the cheap upper bounds already rule out the threshold."""
     sm = difflib.SequenceMatcher(None, a, b, autojunk=False)
+    # Why the quick ratios: they are cheap upper bounds, so the slow ratio() runs only on possible
+    # matches.
     if sm.real_quick_ratio() < threshold or sm.quick_ratio() < threshold:
         return 0.0
     return sm.ratio()
@@ -55,6 +61,8 @@ def closest(prompt, answers, train, train_grams, args):
     """(prompt similarity, its train index, answer similarity, its train index) for one prompt."""
     g = grams(norm(prompt))
     p_sim, p_idx = max((jaccard(g, tg), i) for i, tg in enumerate(train_grams))
+    # Why compare answers too: a reworded prompt can keep almost the same answer. 28 of the 35
+    # flagged prompts match this way.
     r_sim, r_idx = max((text_similarity(a, r["response"], args.reference_threshold), i)
                        for a in answers for i, r in enumerate(train))
     return p_sim, p_idx, r_sim, r_idx

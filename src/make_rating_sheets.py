@@ -34,6 +34,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 
 TAG = "Qwen2.5-1.5B-Instruct"
 # Fixed in advance (#12): base model, r=16 on all data, r=16 on 100 rows.
+# Why these three: they cover the base model, the default setting and the smallest data size.
 SYSTEMS = [f"{TAG}_zeroshot", f"{TAG}_r16_n775", f"{TAG}_r16_n100"]
 RATERS = ["Pranjal", "Sunny", "Shahid", "Ompal"]
 CRITERIA = {
@@ -74,8 +75,10 @@ def build_items(results_dir, systems, test_ids, n_prompts, seed):
         answers[name] = rows
 
     rng = random.Random(seed)
+    # Why the same prompts for all systems: human scores can then be compared prompt by prompt.
     prompt_ids = rng.sample(test_ids, n_prompts)
     items = [(pid, name) for pid in prompt_ids for name in systems]
+    # Why shuffle: an answer's position can't reveal which system wrote it.
     rng.shuffle(items)
     # Excel rejects control characters, which a model can emit; drop them from the sheet text.
     clean = lambda text: ILLEGAL_CHARACTERS_RE.sub("", text or "")
@@ -133,6 +136,8 @@ def write_sheet(path, rater, items):
         for r in range(2, last + 1):
             ws[f"{col}{r}"].fill = score_fill
             ws[f"{col}{r}"].alignment = Alignment(horizontal="center", vertical="top")
+    # Why allow blanks: a criterion can be not applicable, and collect_ratings.py counts a blank as
+    # missing.
     dv = DataValidation(type="whole", operator="between", formula1="1", formula2="5", allow_blank=True,
                         showErrorMessage=True, errorTitle="Score 1-5", error="Enter a whole number from 1 to 5.")
     dv.add(f"{SCORE_COLS[0]}2:{SCORE_COLS[-1]}{last}")

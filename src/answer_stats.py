@@ -38,6 +38,8 @@ def load_jsonl(path):
 
 
 def loops(text, words=8, times=3):
+    # Why 8 words, 3 times: long enough that normal repeated wording doesn't count. The rank trend
+    # also holds with 5 and 6 words.
     w = text.split()
     counts = collections.Counter(tuple(w[i:i + words]) for i in range(len(w) - words + 1))
     return bool(counts) and max(counts.values()) >= times
@@ -53,6 +55,8 @@ def stats(texts, tok, limit):
     return {
         "answers": len(texts),
         "median_tokens": statistics.median(n_tokens),
+        # Why limit - 2: re-tokenizing decoded text can give up to two tokens fewer than were
+        # generated.
         "at_limit": sum(n >= limit - 2 for n in n_tokens),
         "looping": sum(loops(t) for t in texts),
         "mostly_devanagari": sum(devanagari_share(t) > 0.5 for t in texts),
@@ -97,6 +101,7 @@ def main():
         out["runs"][path.stem] = stats(texts, tok, args.max_new_tokens)
         m = re.search(r"_r\d+_n(\d+)$", path.stem)
         if m:
+            # Why train[:N]: a run can only memorise the rows it actually trained on.
             out["runs"][path.stem]["copied_train"] = copied(texts, [r["response"] for r in train[: int(m.group(1))]])
 
     Path(args.out).write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8")
