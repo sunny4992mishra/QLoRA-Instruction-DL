@@ -36,7 +36,12 @@ TAG = "Qwen2.5-1.5B-Instruct"
 # Fixed in advance (#12): base model, r=16 on all data, r=16 on 100 rows.
 # Why these three: they cover the base model, the default setting and the smallest data size.
 SYSTEMS = [f"{TAG}_zeroshot", f"{TAG}_r16_n775", f"{TAG}_r16_n100"]
+# All four authors rate the same 90 items, so agreement between raters can be measured.
 RATERS = ["Pranjal", "Sunny", "Shahid", "Ompal"]
+# The same three criteria as the LLM judge, with a 1 / 3 / 5 anchor each. One difference matters:
+# here a looping or cut-off answer counts against helpfulness, and fluency is the language only;
+# the judge prompt counts looping against fluency. This explains most of the judge's lower fluency
+# scores.
 CRITERIA = {
     "correctness": ("Correctness",
                     "Are the facts and the content right? Compare with the reference, but the reference "
@@ -62,6 +67,7 @@ def load_jsonl(path):
         return [json.loads(line) for line in f if line.strip()]
 
 
+# Build the 90 rating items: 30 test prompts x 3 systems.
 def build_items(results_dir, systems, test_ids, n_prompts, seed):
     answers = {}
     for name in systems:
@@ -74,6 +80,8 @@ def build_items(results_dir, systems, test_ids, n_prompts, seed):
             sys.exit(f"{path} has no answer for {len(missing)} of the {len(test_ids)} test prompts")
         answers[name] = rows
 
+    # Seed 42: rerunning gives the same 30 prompts and the same order. A local Random object does
+    # not change Python's global random state.
     rng = random.Random(seed)
     # Why the same prompts for all systems: human scores can then be compared prompt by prompt.
     prompt_ids = rng.sample(test_ids, n_prompts)
@@ -82,6 +90,8 @@ def build_items(results_dir, systems, test_ids, n_prompts, seed):
     rng.shuffle(items)
     # Excel rejects control characters, which a model can emit; drop them from the sheet text.
     clean = lambda text: ILLEGAL_CHARACTERS_RE.sub("", text or "")
+    # Item numbers 1 to 90 follow the shuffled order. 'system' is kept here for key.json only; it
+    # is never written to the sheets.
     return [{"item": k, "id": pid, "system": name,
              "instruction": clean(answers[name][pid]["instruction"]),
              "reference": clean(answers[name][pid]["reference"]),
@@ -89,6 +99,9 @@ def build_items(results_dir, systems, test_ids, n_prompts, seed):
             for k, (pid, name) in enumerate(items, start=1)]
 
 
+# One Excel file per rater: an Instructions tab with the scale, and a Ratings tab with item,
+# instruction, reference, answer, three score columns and a comment column. Nothing on the sheet
+# names the system, so the rating is blind.
 def write_sheet(path, rater, items):
     wb = Workbook()
     guide = wb.active
@@ -120,6 +133,8 @@ def write_sheet(path, rater, items):
         c.font = Font(bold=True)
         c.fill = PatternFill("solid", fgColor="DDDDDD")
     for it in items:
+        # Raters see the reference answer, like the judge, so both score against the same
+        # information.
         ws.append([it["item"], it["instruction"], it["reference"], it["output"], None, None, None, None])
         # openpyxl stores a string that starts with "=" as a formula, and Excel then shows an
         # error instead of the text. One reference starts with "== ... ==". Force plain text.
@@ -138,10 +153,13 @@ def write_sheet(path, rater, items):
             ws[f"{col}{r}"].alignment = Alignment(horizontal="center", vertical="top")
     # Why allow blanks: a criterion can be not applicable, and collect_ratings.py counts a blank as
     # missing.
+    # Excel refuses anything but a whole number from 1 to 5 in the score cells, so typos can't
+    # enter the data.
     dv = DataValidation(type="whole", operator="between", formula1="1", formula2="5", allow_blank=True,
                         showErrorMessage=True, errorTitle="Score 1-5", error="Enter a whole number from 1 to 5.")
     dv.add(f"{SCORE_COLS[0]}2:{SCORE_COLS[-1]}{last}")
     ws.add_data_validation(dv)
+    # Keep the header row and item column visible while scrolling.
     ws.freeze_panes = "B2"
     wb.active = wb.index(guide)
     wb.save(path)
@@ -162,6 +180,8 @@ def main():
     out = Path(args.out_dir)
     targets = [out / "key.json"] + [out / f"rating_sheet_{r}.xlsx" for r in args.raters]
     existing = [str(t) for t in targets if t.exists()]
+    # Refuse to overwrite existing sheets without --force, so filled-in ratings can't be lost by
+    # rerunning the script.
     if existing and not args.force:
         sys.exit(f"already exists, not overwriting (use --force): {', '.join(existing)}")
 
@@ -169,6 +189,8 @@ def main():
     items = build_items(args.results_dir, args.systems, test_ids, args.n_prompts, args.seed)
 
     out.mkdir(parents=True, exist_ok=True)
+    # key.json maps each item to its prompt id and system. It is a separate file that raters did
+    # not open until all four sheets were done; collect_ratings.py uses it afterwards.
     key = {"seed": args.seed, "systems": args.systems, "raters": args.raters,
            "criteria": list(CRITERIA),
            "items": [{"item": it["item"], "id": it["id"], "system": it["system"]} for it in items]}

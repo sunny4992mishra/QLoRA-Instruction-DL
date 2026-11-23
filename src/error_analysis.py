@@ -44,13 +44,24 @@ import re
 import sys
 from pathlib import Path
 
+# Repo root, so the default paths work from any folder.
 ROOT = Path(__file__).resolve().parent.parent
 MODEL = "Qwen/Qwen2.5-1.5B-Instruct"
 MAX_NEW_TOKENS = 512
+# Why 510 and not 512: the stored answer is decoded and stripped text, and re-tokenizing it can
+# give one or two tokens fewer than were generated. No answer has 505 to 509 tokens, so 510 cleanly
+# separates answers that hit the limit.
 LIMIT_TOKENS = 510            # re-tokenized length that counts as reaching the limit
+# Same loop definition as answer_stats.py. Here a loop must also reach the limit (see classify), so
+# these counts are lower: r = 4 has 38 loops here against 43 in Table 8.
 LOOP_N, LOOP_K = 8, 3         # an 8-word phrase repeated 3 or more times
+# 'Restates the question' needs both: at least half of the answer comes from the instruction, and
+# the answer repeats most (60%) of the instruction. One share alone would also catch a correct
+# answer that quotes a few words of the question.
 COPY_SHARE = 0.5              # share of answer 3-grams found in the instruction
 COVER_SHARE = 0.6             # share of instruction 3-grams repeated in the answer
+# Display order of the categories in the tables. The order in which the rules are applied is the
+# order inside classify().
 CATEGORIES = ["not_hindi", "loops", "cut_off", "wrong_fluent", "copies_prompt",
               "incoherent", "weak", "ok"]
 LABELS = {
@@ -64,10 +75,13 @@ LABELS = {
     "ok": "Correct enough (judge >= 3, not looping)",
 }
 
+# Examples are taken from these runs first: the default fine-tuned run, the baseline and the
+# smallest data size.
 EXAMPLE_RUNS = [f"Qwen2.5-1.5B-Instruct_{s}" for s in ("r16_n775", "zeroshot", "r16_n100")]
 
 DEVANAGARI = re.compile(r"[ऀ-ॿ]")
 LETTER = re.compile(r"[^\W\d_]")
+# A Latin-script word of 3+ letters, to spot answers written in English.
 LATIN_WORD = re.compile(r"[A-Za-z]{3,}")
 
 
@@ -76,6 +90,8 @@ def load_jsonl(path):
         return [json.loads(line) for line in f if line.strip()]
 
 
+# Only the tokenizer is needed (to count answer tokens), not the model, so the script runs without
+# a GPU or torch.
 def load_tokenizer():
     """Token counter for the base model: the tokenizers library if installed, else transformers."""
     try:
@@ -89,6 +105,8 @@ def load_tokenizer():
         return lambda text: len(tok(text, add_special_tokens=False)["input_ids"])
 
 
+# Share of letters that are Devanagari. Digits and punctuation are not letters, so they don't count
+# either way.
 def devanagari_share(text):
     letters = LETTER.findall(text)
     if not letters:
@@ -96,15 +114,20 @@ def devanagari_share(text):
     return sum(1 for ch in letters if DEVANAGARI.match(ch)) / len(letters)
 
 
+# All runs of n consecutive words, as tuples, e.g. n = 3 on 'a b c d' gives (a, b, c) and (b, c,
+# d).
 def ngrams(words, n):
     return [tuple(words[i:i + n]) for i in range(len(words) - n + 1)]
 
 
+# How often the most frequent 8-word phrase occurs. 3 or more counts as looping.
 def max_repeat(text, n=LOOP_N):
     counts = collections.Counter(ngrams(text.split(), n))
     return max(counts.values()) if counts else 0
 
 
+# Used both ways round: share_in(answer, instruction) = how much of the answer is copied from the
+# instruction; share_in(instruction, answer) = how much of the instruction the answer repeats.
 def share_in(text, source):
     """Share of the word 3-grams of text that also occur in source."""
     grams = ngrams(text.split(), 3)
@@ -114,7 +137,14 @@ def share_in(text, source):
     return sum(1 for g in grams if g in known) / len(grams)
 
 
+# One category per answer: the FIRST rule that matches wins, so the order of the rules matters.
+# Order: not_hindi, loops, ok, cut_off, wrong_fluent, copies_prompt, incoherent, weak. The
+# text-only rules (not_hindi, loops, cut_off) don't depend on the judge; the others use the judge's
+# correctness and fluency, so they carry the judge's errors.
 def classify(a):
+    # Not in Hindi: under half the letters are Devanagari and there are 3+ English words, while the
+    # reference is Hindi. The reference condition exempts prompts that ask for English (such as a
+    # translation into English); the 3-word condition exempts one-word answers such as 'NPTEL'.
     if (a["devanagari_share"] < 0.5 and a["latin_words"] >= 3
             and a["ref_devanagari_share"] >= 0.5):
         return "not_hindi"
@@ -127,6 +157,8 @@ def classify(a):
     # case.
     if c is not None and c >= 3:
         return "ok"
+    # Reaches the limit without a loop: still talking when generation stopped (22 zero-shot
+    # answers).
     if a["hits_limit"]:
         return "cut_off"
     if c is None:      # judge failed on this answer
@@ -136,8 +168,12 @@ def classify(a):
         return "wrong_fluent"
     if a["copy_share"] >= COPY_SHARE and a["instruction_covered"] >= COVER_SHARE:
         return "copies_prompt"
+    # Wrong and the judge also scores the Hindi as poor. Fine-tuned runs have 29 to 56 of these,
+    # zero-shot only 9: fine-tuning trades loops for short answers the judge calls incoherent. The
+    # human raters scored these answers' fluency higher (2.5 vs 1.6 from the judge).
     if f is not None and f <= 2:
         return "incoherent"
+    # Everything else that is wrong: vague or only partly right.
     return "weak"
 
 
@@ -145,6 +181,7 @@ def run_names(results_dir):
     return sorted(p.stem for p in results_dir.glob("*.jsonl"))
 
 
+# Table order: zero-shot, then the full-data rank sweep, then the data-size runs.
 def sort_key(name):
     m = re.search(r"_r(\d+)_n(\d+)$", name)
     return (0, 0, 0) if not m else (1, int(m.group(2)) != 775, int(m.group(1)) + int(m.group(2)))
@@ -154,6 +191,8 @@ def short(name):
     return name.split("_", 1)[1] if "_" in name else name
 
 
+# Collect the measurements for every answer of every run, then classify it. The reference's length
+# is counted once per prompt and reused across runs.
 def analyze(results_dir, count_tokens):
     answers = []
     ref_tokens = {}
@@ -183,6 +222,8 @@ def analyze(results_dir, count_tokens):
                 "helpfulness": j.get("helpfulness"),
                 "fluency": j.get("fluency"),
             }
+            # Zero-shot: 103 of 150 answers reach the limit, against 32 to 49 for the fine-tuned
+            # runs other than N = 250 (70).
             a["hits_limit"] = a["tokens"] >= LIMIT_TOKENS
             a["category"] = classify(a)
             a["_instruction"], a["_output"] = r.get("instruction") or "", out
@@ -197,6 +238,9 @@ def table(header, rows):
     return "\n".join(lines)
 
 
+# answers.csv (one row per answer, 1,350 rows), summary.md (category and flag counts per run, Table
+# 15 in the report) and examples.md. lineterminator='\n' keeps the CSV identical on Windows and
+# Linux reruns.
 def write_outputs(answers, out_dir, rated_ids):
     out_dir.mkdir(parents=True, exist_ok=True)
     fields = ["run", "id", "category", "tokens", "ref_tokens", "hits_limit", "max_repeat",
@@ -217,6 +261,9 @@ def write_outputs(answers, out_dir, rated_ids):
     def flag_row(label, pred):
         return [label] + [sum(1 for a in by_run[r] if pred(a)) for r in runs]
 
+    # Flags count every answer with a property, regardless of its category, so an answer can have
+    # several. Example: 'Judge correctness >= 3' is 17 for zero-shot, but only 13 zero-shot answers
+    # are in 'ok' because 4 of them loop.
     flag_rows = [
         flag_row("Reaches the 512-token limit", lambda a: a["hits_limit"]),
         flag_row("... and the reference is also over 512 tokens",
@@ -262,6 +309,8 @@ def write_outputs(answers, out_dir, rated_ids):
           "sample. Text is cut to 300 characters.", ""]
     for c in CATEGORIES[:-1]:
         ex += [f"## {LABELS[c]}", ""]
+        # Examples come only from prompts outside the 30 human-rated ones, so reading the examples
+        # could not influence the raters.
         picked = [a for a in answers if a["category"] == c and a["id"] not in rated_ids]
         # one answer per run where possible, starting with the main fine-tuned run
         picked.sort(key=lambda a: (a["run"] not in EXAMPLE_RUNS,
@@ -292,6 +341,8 @@ def main():
         sys.stdout.reconfigure(encoding="utf-8")
     results_dir = Path(args.results)
     key = results_dir / "human" / "key.json"
+    # Only the prompt ids are read from key.json, not which system wrote each item, so this does
+    # not unblind anyone.
     rated = set()
     if key.exists():
         rated = {i["id"] for i in json.loads(key.read_text(encoding="utf-8"))["items"]}

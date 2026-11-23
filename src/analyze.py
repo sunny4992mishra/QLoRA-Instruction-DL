@@ -48,12 +48,18 @@ from pathlib import Path
 
 import matplotlib
 
+# Agg draws to image files without a screen, so the script runs on a server or in CI with no
+# display.
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.ticker import MaxNLocator  # noqa: E402
 
 CRITERIA = ["correctness", "helpfulness", "fluency"]
+# Accept an older name for the fluency score, so judge files written before the name was fixed
+# still load.
 ALIASES = {"hindi_fluency": "fluency"}
+# These two numbers define the two sweeps: runs with 775 rows form the rank sweep (r = 4 to 64),
+# and runs with r = 16 form the data-size sweep (N = 100 to 775).
 FULL_N = 775          # all training rows; the rank sweep uses these
 SWEEP_RANK = 16       # the data-size sweep uses this rank
 
@@ -63,6 +69,8 @@ COLORS = {"correctness": "#2a78d6", "helpfulness": "#eb6834", "fluency": "#1baf7
           "mean": "#0b0b0b", "loss": "#2a78d6", "eval": "#eb6834", "deva": "#2a78d6"}
 INK, INK_2, GRID = "#0b0b0b", "#52514e", "#e4e3df"
 
+# Devanagari block, and 'any Unicode letter' ([^\W\d_] = word characters that are not digits or
+# underscore). Used for the share of Hindi letters in answers.
 DEVANAGARI = re.compile(r"[ऀ-ॿ]")
 LETTER = re.compile(r"[^\W\d_]")
 
@@ -72,12 +80,16 @@ def load_jsonl(path):
         return [json.loads(line) for line in f if line.strip()]
 
 
+# The run name carries rank and rows (..._r16_n775), so a run is identified even if run_info.json
+# is missing. The zero-shot run has no _r/_n part and gets (None, None).
 def parse_name(name):
     """Rank and training rows from a run name like Qwen2.5-1.5B-Instruct_r16_n775."""
     m = re.search(r"_r(\d+)_n(\d+)$", name)
     return (int(m.group(1)), int(m.group(2))) if m else (None, None)
 
 
+# Used for every ± value in the report. Example: r16_n775 correctness 1.72 ± 0.19 over 150 answers.
+# n - 1 in the standard deviation is the sample (unbiased) version.
 def mean_ci(values):
     """Mean and 95% normal-approximation half-width; None for no values."""
     if not values:
@@ -91,6 +103,9 @@ def mean_ci(values):
     return mu, 1.96 * sd / math.sqrt(n)
 
 
+# Cheap checks that need no judge: share of Devanagari letters, median answer length in characters
+# (541 for zero-shot, about 190 to 240 for fine-tuned runs except N = 250 at 436) and empty
+# answers.
 def answer_stats(rows):
     """Judge-free checks on generate.py output."""
     outs = [r.get("output") or "" for r in rows]
@@ -108,6 +123,8 @@ def answer_stats(rows):
     }
 
 
+# Sanity check that each judge line belongs to an answer of this run, so a judge file made from the
+# wrong results file cannot be averaged silently.
 def check_judge_ids(name, rows, answer_ids):
     """Keep one judge line per answer id and warn about anything that doesn't line up.
 
@@ -144,6 +161,9 @@ def is_score(v):
     return isinstance(v, (int, float)) and not isinstance(v, bool) and 1 <= v <= 5
 
 
+# Mean and 95% interval of each criterion over a run's answers, plus the 'judge mean': first
+# average the three criteria per answer, then average over answers (Table 9: zero-shot 1.63,
+# r16_n775 2.06, best r32 2.12).
 def judge_stats(rows):
     out = {"n_judged": 0}
     per_answer_mean = []
@@ -167,7 +187,11 @@ def judge_stats(rows):
     return out
 
 
+# Build one row per run by joining three sources on the run name: runs/<name>/run_info.json (cost,
+# losses), results/<name>.jsonl (answers) and results/judge/<name>.jsonl (scores). Any of them may
+# be missing; the row just has fewer fields.
 def collect(runs_dir, results_dir, judge_dir):
+    # Every run name that appears in any of the three folders.
     names = {p.parent.name for p in runs_dir.glob("*/run_info.json")}
     names |= {p.stem for p in results_dir.glob("*.jsonl")}
     names |= {p.stem for p in judge_dir.glob("*.jsonl")}
@@ -186,6 +210,9 @@ def collect(runs_dir, results_dir, judge_dir):
             row.update({
                 "trainable_params": info.get("trainable_params"),
                 "trainable_pct": info.get("trainable_pct"),
+                # Memory numbers are peak allocated (torch.cuda.max_memory_allocated), in GB of
+                # 1024^3 bytes: 5.83 GB at r = 4 to 6.43 GB at r = 64; 5.94 GB for every r = 16
+                # run.
                 "mem_after_load_gb": loaded.get("peak_allocated_gb"),
                 "peak_mem_gb": peak.get("peak_allocated_gb"),
                 "peak_reserved_gb": peak.get("peak_reserved_gb"),
@@ -207,6 +234,7 @@ def collect(runs_dir, results_dir, judge_dir):
         if jud.exists():
             kept = check_judge_ids(name, load_jsonl(jud), answer_ids)
             row.update(judge_stats(kept))
+            # Scores per prompt id, kept for the paired differences below.
             row["judge_by_id"] = {r.get("id"): {ALIASES.get(k, k): v for k, v in r.items()} for r in kept}
         table.append(row)
     return table
@@ -217,6 +245,9 @@ def short(name):
     return name.split("_", 1)[1] if "_" in name else name
 
 
+# Why paired: prompt difficulty varies a lot, and comparing two runs on the same prompts removes
+# that variation. Example: r64 - r4 = +0.05 ± 0.14, much tighter than the two separate intervals (±
+# 0.17 each). If the interval contains 0, the difference is not distinguishable from zero.
 def paired_difference(a, b, criterion=None, ids=None):
     """Mean of (a - b) over the prompts both runs have scores for, with a 95% half-width.
 
@@ -227,6 +258,7 @@ def paired_difference(a, b, criterion=None, ids=None):
     ja, jb = a.get("judge_by_id") or {}, b.get("judge_by_id") or {}
     crit = [criterion] if criterion else CRITERIA
     diffs = []
+    # Only prompts both runs have scores for.
     for rid in ja.keys() & jb.keys():
         if ids is not None and rid not in ids:
             continue
@@ -237,6 +269,8 @@ def paired_difference(a, b, criterion=None, ids=None):
     return mean_ci(diffs) + (len(diffs),)
 
 
+# Judge mean over a chosen set of prompts, e.g. the 115 without a near-copy (zero-shot 1.70) or the
+# 35 with one (zero-shot 1.42).
 def subset_mean(row, ids):
     """Judge mean (of the three criteria) over the answers whose id is in ids."""
     vals = []
@@ -247,6 +281,9 @@ def subset_mean(row, ids):
     return mean_ci(vals) + (len(vals),)
 
 
+# Which differences to report (Table 10): every fine-tuned run against zero-shot (all 8 exclude 0,
+# +0.18 to +0.49), each adjacent step in both sweeps, and first against last (r64 - r4 = +0.05 ±
+# 0.14; only 250 -> 500 = +0.27 ± 0.14 is a clear step among fine-tuned runs).
 def comparisons(table):
     """Pairs (a, b) to report as a - b: every run against zero-shot, then steps along each sweep."""
     judged = [r for r in table if r.get("judge_by_id")]
@@ -265,6 +302,7 @@ def comparisons(table):
 
 # ---------------------------------------------------------------- table
 
+# Columns of results/summary.csv and summary.md: (key, header, number format).
 COLUMNS = [
     ("run", "Run", None), ("rank", "Rank", None), ("train_rows", "Train rows", None),
     ("trainable_params", "Trainable params", "{:,}"), ("trainable_pct", "Trainable %", "{:.3f}"),
@@ -277,10 +315,14 @@ COLUMNS = [
 ]
 
 
+# Order: zero-shot first, then by rank, then by number of rows.
 def sort_key(r):
     return (not r["zeroshot"], r["rank"] or 0, r["train_rows"] or 0, r["run"])
 
 
+# Write summary.csv and summary.md: the main table, the paired differences, the near-duplicate
+# split and the seen/unseen table. flagged = the 35 test prompt ids with a near-copy in training;
+# first_row = for each, the position of its earliest near-copy in train.jsonl.
 def write_tables(table, results_dir, flagged=None, first_row=None):
     table = sorted(table, key=sort_key)
     with open(results_dir / "summary.csv", "w", newline="", encoding="utf-8") as f:
@@ -320,6 +362,8 @@ def write_tables(table, results_dir, flagged=None, first_row=None):
             note += (f"| {short(a['run'])} − {short(b['run'])} | " + " | ".join(cell(a, b, c) for c in CRITERIA)
                      + f" | {cell(a, b, None)} | {n} |\n")
     judged = [r for r in table if r.get("judge_by_id")]
+    # Near-duplicate analysis: full-data runs gain +0.73 to +0.90 over zero-shot on the 35 flagged
+    # prompts and +0.20 to +0.40 on the other 115. rest = the 115 prompts without a near-copy.
     if flagged and judged:
         all_ids = set().union(*(r["judge_by_id"].keys() for r in judged))
         rest = all_ids - flagged
@@ -347,11 +391,17 @@ def write_tables(table, results_dir, flagged=None, first_row=None):
                 cells += ["–", "–"]
             note += f"| {short(r['run'])} | " + " | ".join(cells) + " |\n"
         if pairs:
+            # The sweep steps again on the 115 clean prompts, to check the findings are not caused
+            # by near-copies (r64 - r4 = +0.06 ± 0.16; 250 -> 500 = +0.27 ± 0.15).
             sweep = [(a, b) for a, b in pairs if b is not zs]
             note += ("\nSteps along the sweeps on the prompts without a near-copy in training "
                      "(paired difference in the judge mean, A − B):\n\n| A − B | Without near-duplicates |\n|---|---:|\n")
             for a, b in sweep:
                 note += f"| {short(a['run'])} − {short(b['run'])} | {pm(*paired_difference(a, b, ids=rest)[:2], star=True)} |\n"
+        # Memorisation test: subsets are nested, so a run with N rows has seen the near-copy of a
+        # flagged prompt only if first_train_row < N (10, 17, 26 of the 35 for N = 100, 250, 500).
+        # If memorisation drove the gain, 'seen' should gain more than 'unseen'. It is the other
+        # way round (r16_n100: -0.03 seen vs +0.56 unseen), so the gap is mostly not memorisation.
         if first_row and zs is not None:
             note += ("\n## Near-copy in the run's own training rows\n\n"
                      "Training subsets are nested, so each data-size run has seen only some near-copies. "
@@ -376,6 +426,7 @@ def write_tables(table, results_dir, flagged=None, first_row=None):
 
 # ---------------------------------------------------------------- plots
 
+# Plot styling only: no top/right border, light grid, grey labels.
 def style(ax, xlabel, ylabel):
     for s in ("top", "right"):
         ax.spines[s].set_visible(False)
@@ -396,6 +447,7 @@ def empty(ax, msg):
         s.set_visible(False)
 
 
+# One line with dots and 95% error bars; points without a value are skipped.
 def line(ax, xs, ys, cis, key, label, width=2.0):
     pts = [(x, y, c) for x, y, c in zip(xs, ys, cis) if y is not None]
     if not pts:
@@ -417,6 +469,10 @@ def zeroshot_line(ax, zs, key, label=None):
                         xytext=(2, 3), textcoords="offset points", fontsize=8, color=INK_2)
 
 
+# Figures 3 and 4 of the report: left panel judge scores (three criteria and their mean, with
+# zero-shot as a dashed line), right panel validation loss. The rank axis is log base 2 because the
+# ranks double (4, 8, 16, 32, 64). Before judge scores existed, the left panel showed the
+# Devanagari share instead.
 def sweep_figure(rows, zs, xkey, xlabel, title, path, log2=False):
     rows = sorted(rows, key=lambda r: r[xkey])
     xs = [r[xkey] for r in rows]
@@ -458,6 +514,8 @@ def sweep_figure(rows, zs, xkey, xlabel, title, path, log2=False):
     plt.close(fig)
 
 
+# Figure 5: judge mean against peak GPU memory. The five ranks spread over only 0.60 GB and their
+# scores overlap; the data sizes all sit at 5.94 GB.
 def memory_figure(trained, zs, path):
     pts = [r for r in trained if r.get("peak_mem_gb") is not None]
     judged = any(r.get("judge_mean") is not None for r in pts)
@@ -509,6 +567,8 @@ def memory_figure(trained, zs, path):
     plt.close(fig)
 
 
+# Figure 2: training loss (logged every 5 steps) and validation loss (after each epoch) for every
+# run. Shows the epoch-3 rise for the higher ranks.
 def loss_figure(trained, path):
     runs = [r for r in sorted(trained, key=sort_key) if r.get("log_history")]
     cols = min(3, max(1, len(runs)))
@@ -567,6 +627,8 @@ def main():
     zs = next((r for r in table if r["zeroshot"]), None)
     trained = [r for r in table if not r["zeroshot"] and r["rank"] is not None]
     nd_path = Path(args.near_duplicates)
+    # Optional input from find_near_duplicates.py. Without it the near-duplicate tables are
+    # skipped.
     near = json.loads(nd_path.read_text(encoding="utf-8")) if nd_path.exists() else None
     flagged = set(near["ids"]) if near else None
     first_row = {q["id"]: q["first_train_row"] for q in near["pairs"] if "first_train_row" in q} if near else None

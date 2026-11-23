@@ -22,6 +22,8 @@ import re
 import sys
 from pathlib import Path
 
+# Run this before committing a run: each line prints PASS or FAIL, and any FAIL means the run
+# cannot be compared with the others. It needs no GPU, only the committed files.
 MODEL = "Qwen/Qwen2.5-1.5B-Instruct"
 TAG = MODEL.split("/")[-1]
 FULL_TRAIN = 775
@@ -42,20 +44,25 @@ def load_jsonl(path):
         return [json.loads(line) for line in f if line.strip()]
 
 
+# Share of Devanagari letters, for the info line printed at the end.
 def devanagari_share(text):
     letters = [c for c in text if c.isalpha() or "\u0900" <= c <= "\u097F"]
     return sum("\u0900" <= c <= "\u097F" for c in letters) / max(1, len(letters))
 
 
+# Checks on runs/<name>/run_info.json. Each yield is (label, passed).
 def check_run_info(info, rank, n):
     args = info["args"]
     kept = KEPT[n]
+    # Expected optimizer steps: batches of 2 rows, 8 batches per step, 3 epochs. 766 kept rows ->
+    # 383 batches -> 48 steps per epoch -> 144. N = 100 (98 kept) -> 21.
     batches = math.ceil(kept / DEFAULTS["batch_size"])
     steps = math.ceil(batches / DEFAULTS["grad_accum"]) * DEFAULTS["epochs"]
     # Why fail on any changed default: rank and data size must be the only variables between runs.
     changed = {k: args.get(k) for k, v in DEFAULTS.items() if args.get(k) != v}
     evals = [h["eval_loss"] for h in info["log_history"] if "eval_loss" in h]
     gpu = info["gpu_memory_peak_training"]
+    # The run name must match its real settings, and alpha must be 2 x rank.
     yield f"rank {rank}, alpha {2 * rank}", args["rank"] == rank and args["alpha"] == 2 * rank
     yield f"train size {n}", args["train_size"] == (0 if n == FULL_TRAIN else n)
     yield "all other settings are the defaults" + (f" (changed: {changed})" if changed else ""), not changed
@@ -63,12 +70,18 @@ def check_run_info(info, rank, n):
     # Why require a T4: memory and time are only comparable on the same GPU.
     yield f"GPU is a T4 (got {gpu.get('gpu')})", "T4" in gpu.get("gpu", "")
     yield f"{kept} rows kept after truncation (got {info['train_tokens']['kept']})", info["train_tokens"]["kept"] == kept
+    # Trainable parameters must be r x 1,154,048: LoRA on all linear layers. Fewer would mean some
+    # layers were left out.
     yield f"{TRAINABLE[rank]:,} trainable params (got {info['trainable_params']:,})", info["trainable_params"] == TRAINABLE[rank]
     yield f"{steps} training steps (got {info['global_steps']})", info["global_steps"] == steps
     yield f"validation loss after each of 3 epochs (got {len(evals)})", len(evals) == 3
+    # A NaN or infinite loss would mean broken fp16 training. Loss values themselves are not
+    # compared: they differ slightly between GPUs.
     yield "losses are finite", all(math.isfinite(x) for x in evals + [info["final_train_loss"]])
 
 
+# Checks on results/<name>.jsonl: exactly the 150 test prompts, once each, from the right base
+# model in 4-bit, with the right adapter (none for zero-shot), and no empty answers.
 def check_results(rows, test_ids, name, adapter_run):
     ids = [r["id"] for r in rows]
     adapters = {r["adapter"] for r in rows}
@@ -76,6 +89,8 @@ def check_results(rows, test_ids, name, adapter_run):
     yield "one answer per test prompt, no duplicates", len(set(ids)) == len(ids) and set(ids) == test_ids
     yield "model, 4-bit", all(r["model"] == MODEL and r["quantized_4bit"] for r in rows)
     if adapter_run:
+        # Every answer must come from this run's own adapter folder (.../<name>/adapter), so
+        # answers can't be mixed up between runs.
         ok = len(adapters) == 1 and Path(str(next(iter(adapters)))).parts[-2:] == (name, "adapter")
     else:
         ok = adapters == {None}
@@ -95,6 +110,8 @@ def main():
     failed = 0
     for name in args.names:
         print(f"== {name}")
+        # A fine-tuned run name looks like Qwen2.5-1.5B-Instruct_r16_n775; the zero-shot run has no
+        # run_info.json and is checked on its answers only.
         m = re.fullmatch(re.escape(TAG) + r"_r(\d+)_n(\d+)", name)
         checks = []
         if m:
@@ -126,6 +143,7 @@ def main():
             words = sorted(len(r["output"].split()) for r in rows)
             print(f"info: {hindi} of {len(rows)} answers mostly Devanagari, median {words[len(words) // 2]} words")
     print(f"\n{failed} check(s) failed" if failed else "\nall checks passed")
+    # Exit code 1 on any failure, so a script or CI job can stop on it.
     sys.exit(1 if failed else 0)
 
 
