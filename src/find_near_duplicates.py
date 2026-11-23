@@ -31,6 +31,8 @@ def load_jsonl(path):
         return [json.loads(line) for line in f if line.strip()]
 
 
+# Collapse all whitespace to single spaces, so spacing and line breaks don't affect the similarity
+# (the same rule prepare_data.py uses to decide which prompts are identical).
 def norm(text):
     return " ".join(text.split())
 
@@ -38,17 +40,24 @@ def norm(text):
 def grams(text, n=4):
     # Why character 4-grams: they survive small edits such as an added prefix, punctuation or a
     # Hindi spelling variant.
+    # A set of every 4-character piece, e.g. 'abcde' -> {'abcd', 'bcde'}. max(1, ...) gives a text
+    # shorter than 4 characters one gram (itself).
     return {text[i:i + n] for i in range(max(1, len(text) - n + 1))}
 
 
 def jaccard(a, b):
     # Why Jaccard: shared grams / all grams, so a small edit keeps the score high and a different
     # prompt scores low.
+    # Jaccard similarity = |A intersect B| / |A union B|, from 0 (nothing shared) to 1 (identical
+    # sets). A prompt is flagged at 0.8 or more.
     return len(a & b) / len(a | b)
 
 
 def text_similarity(a, b, threshold):
     """difflib ratio, or 0 when the cheap upper bounds already rule out the threshold."""
+    # difflib ratio = 2 x matching characters / total characters, from 0 to 1. autojunk=False:
+    # difflib otherwise ignores characters that are very frequent in long texts, which would
+    # distort Hindi text where some characters repeat a lot. A reference is flagged at 0.9 or more.
     sm = difflib.SequenceMatcher(None, a, b, autojunk=False)
     # Why the quick ratios: they are cheap upper bounds, so the slow ratio() runs only on possible
     # matches.
@@ -57,6 +66,9 @@ def text_similarity(a, b, threshold):
     return sm.ratio()
 
 
+# For one held-out prompt: the most similar training prompt (Jaccard) and the most similar training
+# response to any of its answers (difflib). max over (score, index) pairs returns the best score
+# and where it is.
 def closest(prompt, answers, train, train_grams, args):
     """(prompt similarity, its train index, answer similarity, its train index) for one prompt."""
     g = grams(norm(prompt))
@@ -80,14 +92,19 @@ def main():
 
     train = load_jsonl(args.train_file)
     test = load_jsonl(args.test_file)
+    # Compute every training prompt's 4-grams once, instead of once per test prompt.
     train_grams = [grams(norm(r["instruction"])) for r in train]
 
+    # Which of the two rules flagged the prompt: 'prompt', 'reference' or both. Result on the 150
+    # test prompts: 24 by prompt, 28 by reference, 17 by both, 35 in total.
     def reasons_for(p_sim, r_sim):
         return [name for name, hit in (("prompt", p_sim >= args.prompt_threshold),
                                        ("reference", r_sim >= args.reference_threshold)) if hit]
 
     flagged = []
     for t in test:
+        # Check every reference of a test prompt, not only the first (25 prompts have more than
+        # one). Checking all of them flagged no extra prompts.
         answers = t.get("references") or [t["reference"]]
         p_sim, p_idx, r_sim, r_idx = closest(t["instruction"], answers, train, train_grams, args)
         reasons = reasons_for(p_sim, r_sim)
@@ -107,6 +124,9 @@ def main():
                             "train_instruction": match["instruction"], "first_train_row": first})
 
     # Validation: one entry per distinct prompt, with the responses of all its rows.
+    # The same check for the validation split, grouped by prompt like the split itself: 10 of the
+    # 50 validation prompts (10 of 61 rows) have a near-copy in training, so validation loss is
+    # also partly measured on near-copies.
     val_groups = {}
     for r in load_jsonl(args.val_file):
         val_groups.setdefault(norm(r["instruction"]), []).append(r)
@@ -130,6 +150,9 @@ def main():
         "flagged_by_either": len(flagged),
         "ids": [f["id"] for f in flagged],
         "ids_by_reference": by_reference,
+        # Because the subsets are nested, a larger N contains more near-copies: 10, 17, 26 and 35
+        # of the 35 for N = 100, 250, 500 and 775. analyze.py uses first_train_row to split seen
+        # from unseen near-copies.
         "flagged_with_copy_in_first_n_rows": {str(n): sum(f["first_train_row"] < n for f in flagged)
                                               for n in (100, 250, 500, len(train))},
         "pairs": flagged,
@@ -143,6 +166,8 @@ def main():
             "row_ids": [i for v in val_flagged.values() for i in v["ids"]],
         },
     }
+    # The split itself is never changed: all runs already used it. The flagged ids are only used to
+    # report results with and without these prompts.
     Path(args.out).write_text(json.dumps(out, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     v = out["validation"]
     print(f"{len(test)} test prompts: {len(by_prompt)} flagged by prompt, {len(by_reference)} by reference, "

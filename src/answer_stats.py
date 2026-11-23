@@ -40,20 +40,29 @@ def load_jsonl(path):
 def loops(text, words=8, times=3):
     # Why 8 words, 3 times: long enough that normal repeated wording doesn't count. The rank trend
     # also holds with 5 and 6 words.
+    # Split into words, count every run of 8 consecutive words, and flag the answer if the most
+    # common run appears 3+ times. Zero-shot loops in 79 of 150 answers; r = 64 in 15.
     w = text.split()
     counts = collections.Counter(tuple(w[i:i + words]) for i in range(len(w) - words + 1))
     return bool(counts) and max(counts.values()) >= times
 
 
+# Share of letters in the Devanagari block (U+0900 to U+097F). Above 0.5 counts as mostly Hindi:
+# zero-shot is already 148 of 150, so its problem is stopping, not language.
 def devanagari_share(text):
     letters = [c for c in text if c.isalpha() or "ऀ" <= c <= "ॿ"]
     return sum("ऀ" <= c <= "ॿ" for c in letters) / max(1, len(letters))
 
 
+# The columns of Table 8 for one system. Tokens are counted with the Qwen tokenizer, the same one
+# the model generated with, so 'at the limit' matches the 512-token cap.
 def stats(texts, tok, limit):
     n_tokens = [len(tok(t, add_special_tokens=False)["input_ids"]) for t in texts]
     return {
         "answers": len(texts),
+        # Median, not mean, because a few 512-token answers would pull a mean up. Zero-shot median
+        # is 512 (more than half hit the limit); fine-tuned runs 178.5 to 225, except N = 250 at
+        # 417.
         "median_tokens": statistics.median(n_tokens),
         # Why limit - 2: re-tokenizing decoded text can give up to two tokens fewer than were
         # generated.
@@ -63,17 +72,23 @@ def stats(texts, tok, limit):
     }
 
 
+# Direct memorisation check: answers with difflib similarity of 0.9 or more to a response the run
+# was trained on. 19 of 1,200 fine-tuned answers, at most 4 per run, and none for N = 100. Many are
+# short (17-18 characters), so a match can also be a short correct answer.
 def copied(texts, pool, threshold=0.9):
     """Number of texts that nearly equal some training response."""
     def hit(text):
         for other in pool:
             sm = difflib.SequenceMatcher(None, text, other, autojunk=False)
+            # The cheap upper bounds run first; the slow ratio() is computed only if they pass.
+            # 'and' stops at the first failing test.
             if sm.real_quick_ratio() >= threshold and sm.quick_ratio() >= threshold and sm.ratio() >= threshold:
                 return True
         return False
     return sum(hit(t.strip()) for t in texts)
 
 
+# Table order: zero-shot, then by rank, then by rows.
 def sort_key(name):
     # zero-shot first, then by rank, then by training rows
     if name.endswith("_zeroshot"):
@@ -95,10 +110,13 @@ def main():
     tok = AutoTokenizer.from_pretrained(args.model)
     train = load_jsonl(args.train_file)
     out = {"tokenizer": args.model, "max_new_tokens": args.max_new_tokens, "runs": {}}
+    # The same statistics for the human reference answers, as a target: median 201.5 tokens, 26 of
+    # 150 are 510+ tokens, 2 loop.
     out["reference"] = stats([r["reference"] for r in load_jsonl(args.test_file)], tok, args.max_new_tokens)
     for path in sorted(Path(args.results_dir).glob("*.jsonl"), key=lambda q: sort_key(q.stem)):
         texts = [r["output"] for r in load_jsonl(path)]
         out["runs"][path.stem] = stats(texts, tok, args.max_new_tokens)
+        # Only fine-tuned runs have training rows to copy from; zero-shot is skipped.
         m = re.search(r"_r\d+_n(\d+)$", path.stem)
         if m:
             # Why train[:N]: a run can only memorise the rows it actually trained on.
